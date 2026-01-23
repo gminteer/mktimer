@@ -1,0 +1,41 @@
+{
+  "name": "mktimer",
+  "version": "0.0.1",
+  "description": "Create systemd user timers easily",
+  "keywords": [
+    "cli",
+    "systemd",
+    "timer"
+  ],
+  "homepage": "https://github.com/gminteer/mktimer#readme",
+  "bugs": {
+    "url": "https://github.com/gminteer/mktimer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gminteer/mktimer.git"
+  },
+  "license": "WTFPL",
+  "author": "gminteer@gmail.com",
+  "type": "module",
+  "bin": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-compat": "^6.0.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-security": "^3.0.1",
+    "prettier": "^3.8.1",
+    "prettier-eslint": "^16.4.2"
+  },
+  "dependencies": {
+    "arg": "^5.0.2"
+  }
+}
