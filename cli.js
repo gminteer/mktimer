@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import arg from 'arg';
 import {exit} from 'node:process';
-import * as fs from 'node:fs/promises';
+import {writeFile} from 'node:fs/promises';
 import {promisify} from 'node:util';
 import {exec as _exec} from 'node:child_process';
 const exec = promisify(_exec);
@@ -56,10 +56,10 @@ WantedBy=timers.target
 
 try {
   let fileName = `${process.env.HOME}/.config/systemd/user/${name}.service`;
-  await fs.writeFile(fileName, serviceContent, {mode: 0o660});
+  await writeFile(fileName, serviceContent, {mode: 0o660});
   console.info(`${fileName} created successfully.`);
   fileName = `${process.env.HOME}/.config/systemd/user/${name}.timer`;
-  await fs.writeFile(fileName, timerContent, {mode: 0o660});
+  await writeFile(fileName, timerContent, {mode: 0o660});
   console.info(`${fileName} created successfully.`);
   // systemctl only outputs to stderr?
   const {stderr} = await exec(
@@ -69,5 +69,5 @@ try {
   console.info(stderr);
 } catch (error) {
   console.error(error.message ? error.message : error.stderr);
-  process.exit(1);
+  exit(1);
 }
