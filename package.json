@@ -1,6 +1,9 @@
 {
   "name": "mktimer",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "description": "Create systemd user timers easily",
   "keywords": [
     "cli",
@@ -23,17 +26,24 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@eslint/compat": "^2.0.1",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
+    "@stylistic/eslint-plugin": "^5.7.1",
     "eslint": "^9.39.2",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-compat": "^6.0.2",
-    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-n": "^17.23.2",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-perfectionist": "^5.4.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-unicorn": "^62.0.0",
     "prettier": "^3.8.1",
-    "prettier-eslint": "^16.4.2",
+    "prettier-eslint": "^16.4.2"
   },
   "dependencies": {
     "arg": "^5.0.2",
