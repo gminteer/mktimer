@@ -23,6 +23,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@types/node": "^18.19.130",
     "eslint": "^9.39.2",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
@@ -33,9 +34,11 @@
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-security": "^3.0.1",
     "prettier": "^3.8.1",
-    "prettier-eslint": "^16.4.2"
+    "prettier-eslint": "^16.4.2",
+    "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "arg": "^5.0.2"
+    "arg": "^5.0.2",
+    "zx": "github:google/zx"
   }
 }

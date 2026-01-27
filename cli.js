@@ -2,9 +2,7 @@
 import arg from 'arg';
 import {exit} from 'node:process';
 import {writeFile} from 'node:fs/promises';
-import {promisify} from 'node:util';
-import {exec as _exec} from 'node:child_process';
-const exec = promisify(_exec);
+import {$} from 'zx';
 
 import preflight from './lib/preflight.js';
 
@@ -61,12 +59,8 @@ try {
   fileName = `${process.env.HOME}/.config/systemd/user/${name}.timer`;
   await writeFile(fileName, timerContent, {mode: 0o660});
   console.info(`${fileName} created successfully.`);
-  // systemctl only outputs to stderr?
-  const {stderr} = await exec(
-    `systemctl --user enable ${name}.timer &&\
-     systemctl --user start ${name}.timer`
-  );
-  console.info(stderr);
+  await $`systemctl --user enable ${name}.timer &&\
+          systemctl --user start ${name}.timer`;
 } catch (error) {
   console.error(error.message ? error.message : error.stderr);
   exit(1);
