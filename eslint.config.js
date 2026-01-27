@@ -3,6 +3,7 @@ import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import google from 'eslint-config-google';
 import {importX} from 'eslint-plugin-import-x';
+// apparently these two rules are borked in eslint 9+
 delete google.rules['valid-jsdoc'];
 delete google.rules['require-jsdoc'];
 import node from 'eslint-plugin-n';
@@ -12,7 +13,6 @@ import promise from 'eslint-plugin-promise';
 import security from 'eslint-plugin-security';
 import unicorn from 'eslint-plugin-unicorn';
 import {globalIgnores} from 'eslint/config';
-// apparently these two rules are borked in eslint 9+
 
 export default [
   js.configs.recommended,
