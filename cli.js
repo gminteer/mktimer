@@ -7,18 +7,17 @@ import {$} from 'zx';
 
 import preflight from './lib/preflight.js';
 
-const arguments_ = arg(
+const args = arg(
   {
     '--calendar': String,
     '--exec': String,
     '--help': Boolean,
     '--name': String,
-
     '--timespan': String,
     '--version': Boolean,
+
     '-c': '--calendar',
     '-h': '--help',
-
     '-n': '--name',
     '-t': '--timespan',
     '-v': '--version',
@@ -27,7 +26,7 @@ const arguments_ = arg(
   {permissive: true}
 );
 
-const {execStart, name, timer, timerType} = await preflight(arguments_);
+const {execStart, name, timer, timerType} = await preflight(args);
 
 const serviceContent = `#${name}.service
 [Unit]
