@@ -27,7 +27,6 @@ export default [
     '@stylistic/brace-style': ['error', '1tbs', {allowSingleLine: true}],
     '@stylistic/semi': true,
     'curly-newline': ['error', {multiline: true}],
-    semi: 'always',
   }),
   unicorn.configs.recommended,
   {

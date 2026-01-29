@@ -1,10 +1,10 @@
 {
-  "name": "mktimer",
-  "version": "0.0.1",
+  "name": "timecop",
+  "version": "0.0.2",
   "engines": {
     "node": ">=20.0.0"
   },
-  "description": "Create systemd user timers easily",
+  "description": "CLI for managing systemd timers",
   "keywords": [
     "cli",
     "systemd",
@@ -21,7 +21,7 @@
   "license": "WTFPL",
   "author": "gminteer@gmail.com",
   "type": "module",
-  "bin": "cli.js",
+  "bin": "cli.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "arg": "^5.0.2",
+    "commander": "^14.0.2",
     "zx": "github:google/zx"
   }
 }

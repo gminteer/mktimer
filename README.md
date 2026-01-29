@@ -1,19 +1,18 @@
-# mktimer
+# timecop
 
-Simple script that lets you create / enable systemd timers with a single command
+An easy to use CLI for systemd timers
 
 Usage:
 
-`mktimer --name $service_name --exec $program (--calendar $systemd.calendar || --timespan $systemd.timespan)`
+`timecop new <service-name> --exec-start <command> (--calendar <systemd-calendar> || --timespan <systemd-timespan> [--no-enable]`
 
 Limitations:
 
-- only does systemd --user timers
-- no flag to disable running systemctl --enable && systemctl --start on the newly created timer
-- I wrote it in node.js
+- currently only does systemd --user timers
+- doesn't validate the entire execStart command, just checks that argv[0] exists and is executable
 
 TODO:
 
-- rewrite in go (or maybe rust)
 - add support for --system timers
 - turn into an actual cli with ls/rm/update commands
+- unit testing
