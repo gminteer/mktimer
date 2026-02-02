@@ -1,11 +1,10 @@
-/* eslint-disable n/no-unpublished-import */
 import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import google from 'eslint-config-google';
-import {importX} from 'eslint-plugin-import-x';
 // apparently these two rules are borked in eslint 9+
 delete google.rules['valid-jsdoc'];
 delete google.rules['require-jsdoc'];
+import {importX} from 'eslint-plugin-import-x';
 import node from 'eslint-plugin-n';
 import perfectionist from 'eslint-plugin-perfectionist';
 import prettier from 'eslint-plugin-prettier/recommended';
@@ -25,7 +24,6 @@ export default [
   perfectionist.configs['recommended-natural'],
   stylistic.configs.customize({
     '@stylistic/brace-style': ['error', '1tbs', {allowSingleLine: true}],
-    '@stylistic/semi': true,
     'curly-newline': ['error', {multiline: true}],
   }),
   unicorn.configs.recommended,
@@ -50,6 +48,13 @@ export default [
       'unicorn/better-regex': 'warn',
       'unicorn/prevent-abbreviations': 'off',
       'vars-on-top': ['warn'],
+    },
+  },
+  {
+    files: ['test/**/*', '*.config.js'],
+    rules: {
+      'n/no-unpublished-import': 'off',
+      'unicorn/catch-error-name': 'off',
     },
   },
   globalIgnores(['**/node_modules', '**/dist', '**/coverage']),

@@ -139,3 +139,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Coverage reports
+coverage/
+
+# Scratch notes
+NOTES.md
