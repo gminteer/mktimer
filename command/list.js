@@ -1,6 +1,6 @@
-import {Command} from 'commander';
+// import {Command} from 'commander';
 
-import addGlobals from '../lib/global-options.js';
+// import addGlobals from '../lib/global-options.js';
 
 export function makeListAction($) {
   return function (filter, options, command) {
@@ -15,10 +15,10 @@ export function makeListAction($) {
   };
 }
 
-export default function makeListCommand() {
-  return addGlobals(new Command())
-    .name('list')
-    .alias('ls')
-    .description('lists timers')
-    .argument('[filter]', 'only display timers matching [filter]');
-}
+// export default function makeListCommand() {
+//   return addGlobals(new Command())
+//     .name('list')
+//     .alias('ls')
+//     .description('lists timers')
+//     .argument('[filter]', 'only display timers matching [filter]');
+// }

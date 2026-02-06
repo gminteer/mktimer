@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {beforeEach, describe, it} from 'mocha';
 import {$ as $_} from 'zx';
 
-import {makeParseExecStart, makeParseTimer} from '../lib/parser-factory.js';
+import {makeParseExecStart, makeParseTimer} from '../lib/parsers.js';
 const $ = $_({nothrow: true, sync: true, verbose: true});
 const shouldFail = new Map();
 

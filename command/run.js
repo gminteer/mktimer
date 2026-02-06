@@ -1,18 +1,31 @@
-import {Command} from 'commander';
-
-import addGlobals from '../lib/global-options.js';
-import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/styles.js';
+import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 const outWarn = (str) => console.warn(warnStyle(str));
 
+export default function addRunCommand({
+  action,
+  parseExecStart,
+  parseTimer,
+  program,
+}) {
+  return program
+    .command('run')
+    .alias('new')
+    .description('create and run a new timer')
+    .argument('<command>', 'command to run', parseExecStart)
+    .requiredOption('--every, --on <schedule>', 'timer schedule', parseTimer)
+    .option('-n, --name <name>', 'default is program name')
+    .action(action);
+}
+
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
-  return function (
-    execStart,
-    {force, name, on, quiet, timerType, verbose, whatIf},
-    command
-  ) {
-    if (!name) name = execStart.split(' ')[0].split('/').pop();
+  return function (execStart, _, command) {
+    const {force, on, quiet, timerType, verbose, whatIf} =
+      command.optsWithGlobals();
+    const name =
+      command.optsWithGlobals()?.name ||
+      execStart.split(' ')[0].split('/').pop();
     const outDebug = whatIf
       ? (str) => console.debug(whatIfStyle(str))
       : (str) => console.debug(verboseStyle(str));
@@ -71,14 +84,4 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       console.info(out.stdout);
     }
   };
-}
-
-export default function makeRunCommand({parseExecStart, parseTimer}) {
-  return addGlobals(new Command())
-    .name('run')
-    .alias('new')
-    .description('create and run a new timer')
-    .argument('<command>', 'command to run', parseExecStart)
-    .requiredOption('--every, --on <schedule>', 'timer schedule', parseTimer)
-    .option('-n, --name <name>', 'default is program name');
 }

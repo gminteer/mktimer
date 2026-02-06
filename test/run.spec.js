@@ -5,7 +5,8 @@ import {Command, InvalidArgumentError} from 'commander';
 import {beforeEach, describe, it} from 'mocha';
 import {spy} from 'sinon';
 
-import makeRunCommand, {makeRunAction} from '../command/run.js';
+import addRunCommand, {makeRunAction} from '../command/run.js';
+import program from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 const shouldFail = new Map();
@@ -59,36 +60,40 @@ beforeEach(() => {
   fileContent = {};
 });
 
+addRunCommand({
+  action: makeRunAction({$, accessSync, env, writeFileSync}),
+  parseExecStart,
+  parseTimer,
+  program,
+});
+program.commands[0].exitOverride();
+
 describe('run command', () => {
-  const program = makeRunCommand({parseExecStart, parseTimer});
   const parse = () => program.parse(args, {from: 'user'});
   let args;
 
-  program.action(makeRunAction({$, accessSync, env, writeFileSync}));
-  program.exitOverride();
-
   describe('smoke test', () => {
-    it('should return a command named "run"', () => {
+    it('should return a program with a "run" subcommand', () => {
       expect(program).to.be.instanceof(Command);
-      expect(program.name()).to.equal('run');
+      expect(program.commands[0].name()).to.equal('run');
     });
 
     it('should error if mandatory arguments are missing or invalid', () => {
-      args = [];
+      args = ['run'];
       expect(parse).to.throw();
 
-      args = ['badExec'];
+      args = ['run', 'badExec'];
       expect(parse).to.throw();
 
-      args = ['validExec'];
+      args = ['run', 'validExec'];
       expect(parse).to.throw();
 
-      args = ['validExec', '--on', 'badTimer'];
+      args = ['run', 'validExec', '--on', 'badTimer'];
       expect(parse).to.throw();
     });
 
     it("shouldn't error if everything goes ok", () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--force'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
       expect(parse).to.not.throw();
     });
@@ -96,17 +101,24 @@ describe('run command', () => {
 
   describe('usage', () => {
     it('should error if asked to overwrite files', () => {
-      args = ['validExec', '--on', 'validTimeSpan'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan'];
       expect(parse).to.throw('validExec.service exists');
     });
 
     it('should overwrite files if passed --force', () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--force'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan', '--force'];
       expect(parse).to.not.throw();
     });
 
     it('should warn on overwrite if passed --verbose', () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--force', '--verbose'];
+      args = [
+        'run',
+        'validExec',
+        '--on',
+        'validTimeSpan',
+        '--force',
+        '--verbose',
+      ];
       const warnSpy = spy(console, 'warn');
       expect(parse).to.not.throw();
       expect(warnSpy.called);
@@ -114,21 +126,28 @@ describe('run command', () => {
     });
 
     it('should relay error if file writes fail', () => {
-      args = ['validExec', '--on', 'validTimeSpan'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
       shouldFail.set(writeFileSync, true);
       expect(parse).to.throw('writeFileSync');
     });
 
     it('should relay error if running systemctl fails', () => {
-      args = ['validExec', '--on', 'validTimeSpan'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
       shouldFail.set($, true);
       expect(parse).to.throw('stderr');
     });
 
     it('should name timer as directed', () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--name', 'testName'];
+      args = [
+        'run',
+        'validExec',
+        '--on',
+        'validTimeSpan',
+        '--name',
+        'testName',
+      ];
       accessSync.fileNotFound();
       parse();
       for (const fileName of Object.keys(fileContent)) {
@@ -137,7 +156,7 @@ describe('run command', () => {
     });
 
     it("shouldn't produce info output if --quiet", () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--quiet'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan', '--quiet'];
       accessSync.fileNotFound();
       const infoSpy = spy(console, 'info');
       parse();
@@ -146,7 +165,7 @@ describe('run command', () => {
     });
 
     it('should produce debug output if --verbose', () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--verbose'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan', '--verbose'];
       accessSync.fileNotFound();
       const debugSpy = spy(console, 'debug');
       parse();
@@ -155,7 +174,7 @@ describe('run command', () => {
       debugSpy.restore();
     });
     it('should console.debug instead of write if --what-if', () => {
-      args = ['validExec', '--on', 'validTimeSpan', '--what-if'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan', '--what-if'];
       accessSync.fileNotFound();
       const writeSpy = spy(writeFileSync);
       const debugSpy = spy(console, 'debug');
@@ -179,12 +198,12 @@ describe('run command', () => {
           timerType: 'timeSpan',
         }),
       };
-      args = ['validExec', '--on', 'validTimeSpan'];
+      args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
       parse();
       expect(fileContent).to.deep.equal(snapshot);
 
-      args = ['validExec', '--on', 'validCalendar'];
+      args = ['run', 'validExec', '--on', 'validCalendar'];
       snapshot = {
         '~/.config/systemd/user/validExec.service': serviceTemplate({
           execStart: '/canonized/validExec',
