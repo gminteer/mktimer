@@ -5,7 +5,7 @@ import {Command, InvalidArgumentError} from 'commander';
 import {beforeEach, describe, it} from 'mocha';
 import {spy} from 'sinon';
 
-import makeRunCommand, {makeRunAction} from '../lib/run.js';
+import makeRunCommand, {makeRunAction} from '../command/run.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 const shouldFail = new Map();

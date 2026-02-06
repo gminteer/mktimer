@@ -1,7 +1,7 @@
 import {Command} from 'commander';
 
-import addGlobals from './global-options.js';
-import {serviceTemplate, timerTemplate} from './templates.js';
+import addGlobals from '../lib/global-options.js';
+import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
   return function (
