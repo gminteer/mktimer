@@ -8,6 +8,7 @@ const $ = $_({nothrow: true, quiet: true, sync: true});
 import makeListCommand, {makeListAction} from './command/list.js';
 import makeRunCommand, {makeRunAction} from './command/run.js';
 import {makeParseExecStart, makeParseTimer} from './lib/parser-factory.js';
+import {errorStyle} from './lib/styles.js';
 import pkg from './package.json' with {type: 'json'};
 
 // build list command
@@ -26,6 +27,10 @@ program
   .name(pkg.name)
   .description(pkg.description)
   .version(pkg.version)
+
+  .configureOutput({
+    outputError: (str, write) => write(errorStyle(str)),
+  })
 
   .addCommand(runCommand)
   .addCommand(listCommand)

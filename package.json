@@ -50,13 +50,15 @@
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-unicorn": "^62.0.0",
-    "mocha": "^11.7.5",
+    "mocha": "^11.3.0",
     "prettier": "^3.8.1",
     "prettier-eslint": "^16.4.2",
     "sinon": "^21.0.1"
   },
   "dependencies": {
+    "boxen": "^8.0.1",
     "commander": "^14.0.2",
+    "tty-table": "^5.0.0",
     "zx": "^8.8.5-lite"
   }
 }

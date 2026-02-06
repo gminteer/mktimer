@@ -1,7 +1,10 @@
 import {Command} from 'commander';
 
 import addGlobals from '../lib/global-options.js';
+import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/styles.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
+
+const outWarn = (str) => console.warn(warnStyle(str));
 
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
   return function (
@@ -10,64 +13,62 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     command
   ) {
     if (!name) name = execStart.split(' ')[0].split('/').pop();
+    const outDebug = whatIf
+      ? (str) => console.debug(whatIfStyle(str))
+      : (str) => console.debug(verboseStyle(str));
 
-    // check if files exist
     const baseFileName = `${env.HOME}/.config/systemd/user/${name}`;
-    for (const ext of ['service', 'timer']) {
+    const serviceFile = {
+      content: serviceTemplate({execStart, name}),
+      name: `${baseFileName}.service`,
+    };
+    const timerFile = {
+      content: timerTemplate({name, on, timerType}),
+      name: `${baseFileName}.timer`,
+    };
+
+    for (const fileName of [serviceFile.name, timerFile.name]) {
       try {
-        const file = `${baseFileName}.${ext}`;
-        accessSync(file);
-        if (!force) command.error(`${file} exists`);
+        accessSync(fileName);
+        if (!force) command.error(`${fileName} exists`);
         if (verbose)
-          console.warn(`overwriting ${file}: exists but --force specified`);
+          outWarn(`overwriting ${fileName}: exists but --force specified`);
       } catch (error) {
         if (error.code !== 'ENOENT') command.error(error.message);
       }
     }
 
-    if (whatIf) console.debug('Would perform the following actions:\n');
-    if (verbose) {
-      console.debug(`Write file: ${baseFileName}.service with content:\n---`);
-      console.debug(serviceTemplate({execStart, name}));
+    if (whatIf) outDebug('Would perform the following actions:\n');
+    for (const file of [serviceFile, timerFile]) {
+      if (verbose) {
+        outDebug('Write file:');
+        outDebug(fileBox(file));
+      }
+      if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
     }
-    if (!whatIf)
-      writeFileSync(
-        `${baseFileName}.service`,
-        serviceTemplate({execStart, name}),
-        {mode: 0o660}
-      );
 
-    if (verbose) {
-      console.debug('---\n');
-      console.debug(`Write file: ${baseFileName}.timer with content:\n---`);
-      console.debug(timerTemplate({name, on, timerType}));
-      console.debug('---\n');
-    }
-    if (!whatIf)
-      writeFileSync(
-        `${baseFileName}.timer`,
-        timerTemplate({name, on, timerType})
-      );
-
-    const cmdlines = [
-      `systemctl --user enable ${name}.timer`,
-      `systemctl --user start ${name}`,
-      `systemctl --user list-timers ${name}`,
-    ];
     $.verbose = verbose;
     $.quiet = quiet;
-    if (verbose) console.debug('Run commands:');
-    for (const cmdline of cmdlines) {
-      if (whatIf) {
-        console.debug(cmdline);
-      } else {
-        const out = $`${cmdline}`;
+    if (verbose) outDebug('Enable and start timer:');
+    const cmdLines = [
+      ['systemctl', '--user', 'daemon-reload'],
+      ['systemctl', '--user', 'enable', '--now', `${name}.timer`],
+    ];
+    for (const line of cmdLines) {
+      if (verbose) outDebug(line.join(' '));
+      if (!whatIf) {
+        const out = $`${line}`;
         if (out.ok) {
-          if (!quiet) console.info(out.stdout);
+          if (!quiet) console.info(out.stderr.trim());
         } else {
-          command.error(`error: ${out.stderr}`);
+          command.error(`error: ${out.stderr.trim()}`);
         }
       }
+    }
+    if (!quiet && !whatIf) {
+      const out = $`systemctl --user status ${name}.timer --no-pager`;
+      if (!out.ok) command.error(`error: ${out.stderr}`);
+      console.info(out.stdout);
     }
   };
 }
