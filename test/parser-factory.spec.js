@@ -34,7 +34,7 @@ describe('parser factory', () => {
   describe('make execStart parser', () => {
     const parseExecStart = makeParseExecStart(accessSync, realPathSync);
     const parse = () => parseExecStart('file');
-    it('should return canonical pathname with arguments respected', () => {
+    it('should return a canonical pathname with arguments respected', () => {
       expect(parseExecStart('file -a --b=foo')).to.equal(
         '/canonized/file -a --b=foo'
       );
