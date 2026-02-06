@@ -41,8 +41,8 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     if (whatIf) outDebug('Would perform the following actions:\n');
     for (const file of [serviceFile, timerFile]) {
       if (verbose) {
-        outDebug('Write file:');
-        outDebug(fileBox(file));
+        outDebug(`Write file: ${(verbose === 1 && file.name) || ''}`);
+        if (verbose > 1) outDebug(fileBox(file));
       }
       if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
     }
