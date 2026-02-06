@@ -136,6 +136,15 @@ describe('run command', () => {
       }
     });
 
+    it("shouldn't produce info output if --quiet", () => {
+      args = ['validExec', '--on', 'validTimeSpan', '--quiet'];
+      accessSync.fileNotFound();
+      const infoSpy = spy(console, 'info');
+      parse();
+      expect(infoSpy.notCalled);
+      infoSpy.restore();
+    });
+
     it('should produce debug output if --verbose', () => {
       args = ['validExec', '--on', 'validTimeSpan', '--verbose'];
       accessSync.fileNotFound();
