@@ -1,4 +1,3 @@
-/* eslint-disable no-invalid-this */
 // "this" is the associated commander Option
 import {expect} from 'chai';
 import {Command, InvalidArgumentError} from 'commander';
@@ -9,14 +8,13 @@ import addRunCommand, {makeRunAction} from '../command/run.js';
 import program from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
-const shouldFail = new Map();
 function $() {
-  return {ok: !shouldFail.get($), stderr: 'stderr', stdout: 'stdout'};
+  return {ok: !$.shouldFail, stderr: 'stderr', stdout: 'stdout'};
 }
 
 function accessSync(file) {
   // returns undefined on success, throws on failure
-  if (shouldFail.get(accessSync)) {
+  if (accessSync.shouldFail) {
     const error = new Error('accessSync');
     error.code = accessSync.errorCode;
     throw error;
@@ -24,39 +22,43 @@ function accessSync(file) {
 }
 accessSync.fileNotFound = () => {
   accessSync.errorCode = 'ENOENT';
-  shouldFail.set(accessSync, true);
+  accessSync.shouldFail = true;
 };
 
 function parseExecStart(value) {
-  if (value !== 'validExec')
-    throw new InvalidArgumentError('execStart value rejected');
-  return `/canonized/${value}`;
+  if (value !== 'validExec') throw new InvalidArgumentError('parseExecStart');
+  return '/canonized/validExec';
 }
 
 function parseTimer(value) {
-  if (!['validCalendar', 'validTimeSpan'].includes(value))
-    throw new InvalidArgumentError('timer value rejected');
-  if (value === 'validCalendar') this.implies({timerType: 'calendar'});
-  else this.implies({timerType: 'timeSpan'});
-  return value === 'validTimeSpan'
-    ? 'normalizedTimeSpan'
-    : 'normalizedCalendar';
+  switch (value) {
+    case 'validCalendar': {
+      return {on: 'normalizedCalendar', timerType: 'calendar'};
+    }
+    case 'validTimeSpan': {
+      return {on: 'normalizedTimeSpan', timerType: 'timeSpan'};
+    }
+    default: {
+      throw new InvalidArgumentError('parseTimer');
+    }
+  }
 }
 
 let fileContent = {};
 function writeFileSync(fileName, content) {
   // returns undefined on success, throws on failure
-  if (shouldFail.get(writeFileSync)) throw new Error('writeFileSync');
+  if (writeFileSync.shouldFail) throw new Error('writeFileSync');
   // eslint-disable-next-line security/detect-object-injection
-  else fileContent[fileName] = content;
+  fileContent[fileName] = content;
 }
 const env = Object.freeze({HOME: '~'});
 
 beforeEach(() => {
-  shouldFail.set(accessSync, false);
-  shouldFail.set(writeFileSync, false);
-  shouldFail.set($, false);
+  program.commands[0].exitOverride();
+  accessSync.shouldFail = false;
   accessSync.errorCode = undefined;
+  writeFileSync.shouldFail = false;
+  $.shouldFail = false;
   fileContent = {};
 });
 
@@ -66,7 +68,6 @@ addRunCommand({
   parseTimer,
   program,
 });
-program.commands[0].exitOverride();
 
 describe('run command', () => {
   const parse = () => program.parse(args, {from: 'user'});
@@ -93,7 +94,14 @@ describe('run command', () => {
     });
 
     it("shouldn't error if everything goes ok", () => {
-      args = ['run', 'validExec', '--on', 'validTimeSpan'];
+      args = [
+        'run',
+        'validExec',
+        '--execOption',
+        'value',
+        '--on',
+        'validTimeSpan',
+      ];
       accessSync.fileNotFound();
       expect(parse).to.not.throw();
     });
@@ -128,14 +136,14 @@ describe('run command', () => {
     it('should relay error if file writes fail', () => {
       args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
-      shouldFail.set(writeFileSync, true);
+      writeFileSync.shouldFail = true;
       expect(parse).to.throw('writeFileSync');
     });
 
     it('should relay error if running systemctl fails', () => {
       args = ['run', 'validExec', '--on', 'validTimeSpan'];
       accessSync.fileNotFound();
-      shouldFail.set($, true);
+      $.shouldFail = true;
       expect(parse).to.throw('stderr');
     });
 
@@ -164,15 +172,35 @@ describe('run command', () => {
       infoSpy.restore();
     });
 
+    let messageCount = 0;
     it('should produce debug output if --verbose', () => {
       args = ['run', 'validExec', '--on', 'validTimeSpan', '--verbose'];
       accessSync.fileNotFound();
       const debugSpy = spy(console, 'debug');
       parse();
       expect(debugSpy.called);
-      console.info(`console debug called ${debugSpy.callCount} times`);
+      messageCount = debugSpy.callCount;
+      console.info(`console debug called ${messageCount} times`);
       debugSpy.restore();
     });
+
+    it('should produce more debug output if --verbose --verbose', () => {
+      args = [
+        'run',
+        'validExec',
+        '--on',
+        'validTimeSpan',
+        '--verbose',
+        '--verbose',
+      ];
+      accessSync.fileNotFound();
+      const debugSpy = spy(console, 'debug');
+      parse();
+      console.info(`console debug called ${debugSpy.callCount} times`);
+      expect(debugSpy.callCount).to.be.greaterThan(messageCount);
+      debugSpy.restore();
+    });
+
     it('should console.debug instead of write if --what-if', () => {
       args = ['run', 'validExec', '--on', 'validTimeSpan', '--what-if'];
       accessSync.fileNotFound();
@@ -189,7 +217,7 @@ describe('run command', () => {
     it('should write templates correctly', () => {
       let snapshot = {
         '~/.config/systemd/user/validExec.service': serviceTemplate({
-          execStart: '/canonized/validExec',
+          execStart: '/canonized/validExec --execOption value',
           name: 'validExec',
         }),
         '~/.config/systemd/user/validExec.timer': timerTemplate({
@@ -198,7 +226,14 @@ describe('run command', () => {
           timerType: 'timeSpan',
         }),
       };
-      args = ['run', 'validExec', '--on', 'validTimeSpan'];
+      args = [
+        'run',
+        'validExec',
+        '--execOption',
+        'value',
+        '--on',
+        'validTimeSpan',
+      ];
       accessSync.fileNotFound();
       parse();
       expect(fileContent).to.deep.equal(snapshot);

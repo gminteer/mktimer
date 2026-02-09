@@ -1,3 +1,5 @@
+// commander binds "this" to the command object
+/* eslint-disable no-invalid-this */
 import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
@@ -12,20 +14,48 @@ export default function addRunCommand({
   return program
     .command('run')
     .alias('new')
-    .description('create and run a new timer')
+    .description('create and start a timer')
     .argument('<command>', 'command to run', parseExecStart)
-    .requiredOption('--every, --on <schedule>', 'timer schedule', parseTimer)
-    .option('-n, --name <name>', 'default is program name')
+    .allowExcessArguments()
+    .allowUnknownOption()
+    .requiredOption(
+      '--every, --on <schedule...>',
+      'timer schedule',
+      (current, previous) => (previous && `${previous} ${current}`) || current,
+      ''
+    )
+    .hook('preAction', (command) => {
+      Object.assign(command.opts(), parseTimer(command.opts().on));
+    })
+    .option(
+      '-n, --name <name>',
+      'if not specified timer will be named after executable'
+    )
+    .addHelpText('after', (context) => {
+      if (context.error) {
+        console.debug(context);
+      } else {
+        return `
+    Schedule can be in either timespan or calendar event format. Options/arguments need to be in single quotes if they contain asterixes (like systemd calendar events), but spaces should be handled correctly. Options not recognized by this command are assumed to be part of the <command> argument.
+
+  Examples of valid timespans: "2 h", "2hours", "1y 6 months", "30s1days 3 hour"
+
+  Examples of valid calendar events: "weekly", "mon,sun 12-*-* 1,2:30", "*-2-29"
+See "man systemd.time" for detailed descriptions of timespan/calendar formats.`;
+      }
+    })
     .action(action);
 }
 
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
-  return function (execStart, _, command) {
+  return function () {
+    // there's probably a better way to do this, but this is good enough
+    this.args[0] = this.processedArgs[0];
+    const execStart = this.args.join(' ');
     const {force, on, quiet, timerType, verbose, whatIf} =
-      command.optsWithGlobals();
+      this.optsWithGlobals();
     const name =
-      command.optsWithGlobals()?.name ||
-      execStart.split(' ')[0].split('/').pop();
+      this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
     const outDebug = whatIf
       ? (str) => console.debug(whatIfStyle(str))
       : (str) => console.debug(verboseStyle(str));
@@ -43,11 +73,11 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     for (const fileName of [serviceFile.name, timerFile.name]) {
       try {
         accessSync(fileName);
-        if (!force) command.error(`${fileName} exists`);
+        if (!force) this.error(`${fileName} exists`);
         if (verbose)
           outWarn(`overwriting ${fileName}: exists but --force specified`);
       } catch (error) {
-        if (error.code !== 'ENOENT') command.error(error.message);
+        if (error.code !== 'ENOENT') this.error(error.message);
       }
     }
 
@@ -74,14 +104,18 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
         if (out.ok) {
           if (!quiet) console.info(out.stderr.trim());
         } else {
-          command.error(`error: ${out.stderr.trim()}`);
+          this.error(`error: ${out.stderr.trim()}`);
         }
       }
     }
     if (!quiet && !whatIf) {
-      const out = $`systemctl --user status ${name}.timer --no-pager`;
-      if (!out.ok) command.error(`error: ${out.stderr}`);
-      console.info(out.stdout);
+      if (verbose) {
+        const out = $`systemctl --user status ${name}.timer --no-pager`;
+        if (!out.ok) this.error(`error: ${out.stderr}`);
+        console.info(out.stdout);
+      } else {
+        // TODO: short success output.
+      }
     }
   };
 }
