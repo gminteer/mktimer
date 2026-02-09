@@ -31,19 +31,16 @@ export default function addRunCommand({
       '-n, --name <name>',
       'if not specified timer will be named after executable'
     )
-    .addHelpText('after', (context) => {
-      if (context.error) {
-        console.debug(context);
-      } else {
-        return `
+    .addHelpText(
+      'after',
+      () => `
     Schedule can be in either timespan or calendar event format. Options/arguments need to be in single quotes if they contain asterixes (like systemd calendar events), but spaces should be handled correctly. Options not recognized by this command are assumed to be part of the <command> argument.
 
   Examples of valid timespans: "2 h", "2hours", "1y 6 months", "30s1days 3 hour"
 
   Examples of valid calendar events: "weekly", "mon,sun 12-*-* 1,2:30", "*-2-29"
-See "man systemd.time" for detailed descriptions of timespan/calendar formats.`;
-      }
-    })
+See "man systemd.time" for detailed descriptions of timespan/calendar formats.`
+    )
     .action(action);
 }
 
