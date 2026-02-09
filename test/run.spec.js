@@ -57,6 +57,7 @@ const env = Object.freeze({HOME: '~'});
 
 beforeEach(() => {
   program.commands[0].exitOverride();
+  program.exitOverride();
   accessSync.shouldFail = false;
   accessSync.errorCode = undefined;
   writeFileSync.shouldFail = false;
