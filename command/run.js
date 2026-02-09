@@ -34,7 +34,7 @@ export default function addRunCommand({
     .addHelpText(
       'after',
       () => `
-    Schedule can be in either timespan or calendar event format. Options/arguments need to be in single quotes if they contain asterixes (like systemd calendar events), but spaces should be handled correctly. Options not recognized by this command are assumed to be part of the <command> argument.
+    Schedule can be in either timespan or calendar event format. Options/arguments need to be in single quotes if they contain asterixes (like systemd calendar events), but spaces in <command> and <schedule> should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument.
 
   Examples of valid timespans: "2 h", "2hours", "1y 6 months", "30s1days 3 hour"
 
