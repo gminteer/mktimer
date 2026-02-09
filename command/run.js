@@ -1,5 +1,7 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
+import chalk from 'chalk';
+
 import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
@@ -18,27 +20,27 @@ export default function addRunCommand({
     .argument('<command>', 'command to run', parseExecStart)
     .allowExcessArguments()
     .allowUnknownOption()
-    .requiredOption(
-      '--every, --on <schedule...>',
-      'timer schedule',
-      (current, previous) => (previous && `${previous} ${current}`) || current,
-      ''
-    )
+    .requiredOption('--every, --on <schedule...>', 'timer schedule')
     .hook('preAction', (command) => {
-      Object.assign(command.opts(), parseTimer(command.opts().on));
+      try {
+        Object.assign(command.opts(), parseTimer(command.opts().on.join(' ')));
+      } catch (error) {
+        program.error(error);
+      }
     })
     .option(
       '-n, --name <name>',
       'if not specified timer will be named after executable'
     )
+    .usage('<command> [options]')
     .addHelpText(
       'after',
       () => `
-    Schedule can be in either timespan or calendar event format. Options/arguments need to be in single quotes if they contain asterixes (like systemd calendar events), but spaces in <command> and <schedule> should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument.
+    Schedule can be either a timespan or a calendar event. Options/arguments need to be in single quotes if they contain asterixes (calendar events), but spaces in <command> and <schedule> should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument. Options this program understands, but should be part of the
 
-  Examples of valid timespans: "2 h", "2hours", "1y 6 months", "30s1days 3 hour"
+  Examples of valid timespans: ${chalk.magenta('2 h')}, ${chalk.magenta('2hour')}, ${chalk.magenta('1y 6 month')}, ${chalk.magenta('30s1days 3 hrs')}
 
-  Examples of valid calendar events: "weekly", "mon,sun 12-*-* 1,2:30", "*-2-29"
+  Examples of valid calendar events: ${chalk.magenta('weekly')}, '${chalk.magenta('mon,sun 12-*-* 1,2:30')}', '${chalk.magenta('*-2-29')}'
 See "man systemd.time" for detailed descriptions of timespan/calendar formats.`
     )
     .action(action);
