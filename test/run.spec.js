@@ -32,9 +32,11 @@ function parseExecStart(value) {
 
 function parseTimer(value) {
   switch (value) {
+    case 'valid calendar':
     case 'validCalendar': {
       return {on: 'normalizedCalendar', timerType: 'calendar'};
     }
+    case 'valid time span':
     case 'validTimeSpan': {
       return {on: 'normalizedTimeSpan', timerType: 'timeSpan'};
     }
@@ -108,6 +110,12 @@ describe('run command', () => {
   });
 
   describe('usage', () => {
+    it('should handle spaces in timer option', () => {
+      args = ['run', 'validExec', '--on', 'valid', 'time', 'span'];
+      accessSync.fileNotFound();
+      expect(parse).to.not.throw();
+    });
+
     it('should error if asked to overwrite files', () => {
       args = ['run', 'validExec', '--on', 'validTimeSpan'];
       expect(parse).to.throw('validExec.service exists');
