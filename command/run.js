@@ -36,7 +36,7 @@ export default function addRunCommand({
     .addHelpText(
       'after',
       () => `
-    Schedule can be either a timespan or a calendar event. Options/arguments need to be in single quotes if they contain asterixes (calendar events), but spaces in <command> and <schedule> should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument. Options this program understands, but should be part of the
+    Schedule can be either a timespan or a calendar event. Options/arguments need to be in single quotes if they contain asterixes (calendar events), but spaces in ${chalk.yellow('<command>')} and ${chalk.green('<schedule...>')} should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument.
 
   Examples of valid timespans: ${chalk.magenta('2 h')}, ${chalk.magenta('2hour')}, ${chalk.magenta('1y 6 month')}, ${chalk.magenta('30s1days 3 hrs')}
 

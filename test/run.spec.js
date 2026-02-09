@@ -12,8 +12,7 @@ function $() {
   return {ok: !$.shouldFail, stderr: 'stderr', stdout: 'stdout'};
 }
 
-function accessSync(file) {
-  // returns undefined on success, throws on failure
+function accessSync() {
   if (accessSync.shouldFail) {
     const error = new Error('accessSync');
     error.code = accessSync.errorCode;
@@ -223,8 +222,8 @@ describe('run command', () => {
   });
 
   describe('output', () => {
-    it('should write templates correctly', () => {
-      let snapshot = {
+    it('should write timeSpan template correctly', () => {
+      const snapshot = {
         '~/.config/systemd/user/validExec.service': serviceTemplate({
           execStart: '/canonized/validExec --execOption value',
           name: 'validExec',
@@ -246,9 +245,10 @@ describe('run command', () => {
       accessSync.fileNotFound();
       parse();
       expect(fileContent).to.deep.equal(snapshot);
+    });
 
-      args = ['run', 'validExec', '--on', 'validCalendar'];
-      snapshot = {
+    it('should write calendar template correctly', () => {
+      const snapshot = {
         '~/.config/systemd/user/validExec.service': serviceTemplate({
           execStart: '/canonized/validExec',
           name: 'validExec',
@@ -259,6 +259,8 @@ describe('run command', () => {
           timerType: 'calendar',
         }),
       };
+      args = ['run', 'validExec', '--on', 'validCalendar'];
+      accessSync.fileNotFound();
       parse();
       expect(fileContent).to.deep.equal(snapshot);
     });
