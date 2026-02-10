@@ -35,7 +35,7 @@ export default function addRunCommand({
     .usage('<command> [options]')
     .addHelpText(
       'after',
-      () => `
+      `
     Schedule can be either a timespan or a calendar event. Options/arguments need to be in single quotes if they contain asterixes (calendar events), but spaces in ${chalk.yellow('<command>')} and ${chalk.green('<schedule...>')} should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument.
 
   Examples of valid timespans: ${chalk.magenta('2 h')}, ${chalk.magenta('2hour')}, ${chalk.magenta('1y 6 month')}, ${chalk.magenta('30s1days 3 hrs')}
@@ -96,24 +96,33 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       ['systemctl', '--user', 'daemon-reload'],
       ['systemctl', '--user', 'enable', '--now', `${name}.timer`],
     ];
+    if (timerType === 'timeSpan')
+      cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
     for (const line of cmdLines) {
       if (verbose) outDebug(line.join(' '));
       if (!whatIf) {
         const out = $`${line}`;
         if (out.ok) {
-          if (!quiet) console.info(out.stderr.trim());
+          if (verbose) console.debug(out.stderr.trim());
         } else {
           this.error(`error: ${out.stderr.trim()}`);
         }
       }
     }
+
     if (!quiet && !whatIf) {
       if (verbose) {
         const out = $`systemctl --user status ${name}.timer --no-pager`;
         if (!out.ok) this.error(`error: ${out.stderr}`);
         console.info(out.stdout);
       } else {
-        // TODO: short success output.
+        const out = $`systemctl --user list-timers ${name} -o json`;
+        if (!out.ok) this.error(`error: ${out.stderr}`);
+        const timerInfo = JSON.parse(out.stdout);
+        const nextRun = new Date(timerInfo[0].next / 1000);
+        console.info(
+          `Timer created: next run of ${chalk.cyan(name)} at ${chalk.green(nextRun.toLocaleString())}`
+        );
       }
     }
   };

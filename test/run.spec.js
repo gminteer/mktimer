@@ -81,7 +81,7 @@ describe('run command', () => {
       expect(program.commands[0].name()).to.equal('run');
     });
 
-    it('should error if mandatory arguments are missing or invalid', () => {
+    it('should error if required information is missing or invalid', () => {
       args = ['run'];
       expect(parse).to.throw();
 
@@ -167,7 +167,7 @@ describe('run command', () => {
       accessSync.fileNotFound();
       parse();
       for (const fileName of Object.keys(fileContent)) {
-        expect(fileName).to.include('testName');
+        expect(fileName).to.include('~/.config/systemd/user/testName');
       }
     });
 
