@@ -4,6 +4,7 @@ import {env} from 'node:process';
 import {$ as $_} from 'zx';
 const $ = $_({nothrow: true, quiet: true, sync: true});
 
+import addListCommand, {makeListAction} from './command/list.js';
 // import makeListCommand, {makeListAction} from './command/list.js';
 import addRunCommand, {makeRunAction} from './command/run.js';
 import program from './lib/common.js';
@@ -24,6 +25,11 @@ addRunCommand({
   action: makeRunAction({$, accessSync, env, writeFileSync}),
   parseExecStart,
   parseTimer,
+  program,
+});
+
+addListCommand({
+  action: makeListAction({$}),
   program,
 });
 
