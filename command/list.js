@@ -41,6 +41,7 @@ export function makeListAction({$}) {
         continue;
       }
 
+      // slicing and dicing
       const execStart = serviceInfo.stdout
         .split('\n')
         .find((line) => line.includes('ExecStart='))
@@ -49,7 +50,7 @@ export function makeListAction({$}) {
         .split('=')[1];
 
       const activates =
-        (timer.activates.split('.')[0] === timer.unit.split('.')[0] && '⬅️') ||
+        (timer.activates.split('.')[0] === timer.unit.split('.')[0] && '⬅') ||
         timer.activates.split('.')[0];
 
       // there's a "left" field in the systemctl output that's supposed to be
@@ -74,7 +75,9 @@ export function makeListAction({$}) {
             .toLocaleString()) ||
         nextRun;
 
-      // I think the "passed" field is similarly borked.
+      // I think the "passed" field is also borked, it looks like it should be
+      // a duration (in microseconds, presumably), but that doesn't line up
+      // with the human readable durations systemctl --list-timers emits
       const lastRun =
         (timer.last &&
           Temporal.Instant.fromEpochMilliseconds(
