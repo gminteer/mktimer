@@ -49,9 +49,12 @@ export function makeListAction({$}) {
         .find((token) => token.includes('argv[]='))
         .split('=')[1];
 
-      const activates =
-        (timer.activates.split('.')[0] === timer.unit.split('.')[0] && '⬅') ||
-        timer.activates.split('.')[0];
+      const timerName = timer.unit.split('.')[0];
+      const serviceName = timer.activates.split('.')[0];
+
+      const timerLine =
+        (timerName === serviceName && timerName) ||
+        `${timerName} ${chalk.yellowBright(`=> ${serviceName}`)}`;
 
       // there's a "left" field in the systemctl output that's supposed to be
       // the number of microseconds until the next run, but it's busted in
@@ -70,7 +73,7 @@ export function makeListAction({$}) {
             .round({
               largestUnit: 'years',
               relativeTo: Temporal.Now.plainDateISO(),
-              smallestUnit: 'seconds',
+              smallestUnit: 'minutes',
             })
             .toLocaleString()) ||
         nextRun;
@@ -91,26 +94,16 @@ export function makeListAction({$}) {
             .round({
               largestUnit: 'years',
               relativeTo: Temporal.Now.plainDateISO(),
-              smallestUnit: 'seconds',
+              smallestUnit: 'minutes',
             })
             .toLocaleString()) ||
         lastRun;
 
       timers.push({
-        activates,
         execStart,
         passed,
-        timeLeft:
-          (typeof timeLeft.round === 'function' &&
-            timeLeft
-              .round({
-                largestUnit: 'years',
-                relativeTo: Temporal.Now.plainDateISO(),
-                smallestUnit: 'seconds',
-              })
-              .toLocaleString()) ||
-          timeLeft,
-        timer: timer.unit.split('.')[0],
+        timeLeft,
+        timer: timerLine,
       });
     }
     timers.sort((a, b) => a.timer.localeCompare(b.timer));
@@ -118,7 +111,7 @@ export function makeListAction({$}) {
     const table = new TtyTable(
       [
         {
-          alias: chalk.bold('Timer'),
+          alias: chalk.bold('Units'),
           align: 'right',
           color: 'cyan',
           headerAlign: 'right',
@@ -126,15 +119,9 @@ export function makeListAction({$}) {
           value: 'timer',
         },
         {
-          alias: chalk.bold('Service'),
+          alias: chalk.bold('Run'),
           color: 'blue',
           headerColor: 'blueBright',
-          value: 'activates',
-        },
-        {
-          alias: chalk.bold('Runs'),
-          color: 'yellow',
-          headerColor: 'yellowBright',
           value: 'execStart',
         },
         {
