@@ -82,11 +82,13 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
         if (verbose)
           outWarn(`overwriting ${fileName}: exists but --force specified`);
       } catch (error) {
+        // we were hoping for error 'ENOENT' all along
         if (error.code !== 'ENOENT') this.error(error.message);
       }
     }
 
     if (whatIf) outDebug('Would perform the following actions:\n');
+    // second verse, diff from the first
     for (const file of [serviceFile, timerFile]) {
       if (verbose) {
         outDebug(`Write file: ${(verbose === 1 && file.name) || ''}`);
