@@ -9,7 +9,11 @@ import program from '../lib/common.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 function $() {
-  return {ok: !$.shouldFail, stderr: 'stderr', stdout: 'stdout'};
+  return {
+    ok: !$.shouldFail,
+    stderr: 'stderr',
+    stdout: '[{"next":2840124000000000}]',
+  };
 }
 
 function accessSync() {

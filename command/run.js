@@ -1,5 +1,6 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
+import {Temporal} from '@js-temporal/polyfill';
 import chalk from 'chalk';
 
 import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/common.js';
@@ -51,10 +52,14 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     // there's probably a better way to do this, but this is good enough
     this.args[0] = this.processedArgs[0];
     const execStart = this.args.join(' ');
+
     const {force, on, quiet, timerType, verbose, whatIf} =
       this.optsWithGlobals();
+
+    // hack the path and args off the execStart line if we don't have a name
     const name =
       this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
+
     const outDebug = whatIf
       ? (str) => console.debug(whatIfStyle(str))
       : (str) => console.debug(verboseStyle(str));
@@ -99,31 +104,28 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     if (timerType === 'timeSpan')
       cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
     for (const line of cmdLines) {
-      if (verbose) outDebug(line.join(' '));
-      if (!whatIf) {
-        const out = $`${line}`;
-        if (out.ok) {
-          if (verbose) console.debug(out.stderr.trim());
-        } else {
-          this.error(`error: ${out.stderr.trim()}`);
-        }
+      if (whatIf) {
+        outDebug(line.join(' '));
+        continue;
       }
+      const out = $`${line}`;
+      if (!out.ok) this.error(`error: ${out.stderr.trim()}`);
+      if (verbose) console.debug(out.stderr.trim());
     }
 
-    if (!quiet && !whatIf) {
-      if (verbose) {
-        const out = $`systemctl --user status ${name}.timer --no-pager`;
-        if (!out.ok) this.error(`error: ${out.stderr}`);
-        console.info(out.stdout);
-      } else {
-        const out = $`systemctl --user list-timers ${name} -o json`;
-        if (!out.ok) this.error(`error: ${out.stderr}`);
-        const timerInfo = JSON.parse(out.stdout);
-        const nextRun = new Date(timerInfo[0].next / 1000);
-        console.info(
-          `Timer created: next run of ${chalk.cyan(name)} at ${chalk.green(nextRun.toLocaleString())}`
-        );
-      }
+    if (quiet || whatIf) return;
+    if (verbose) {
+      const out = $`systemctl --user status ${name}.timer --no-pager`;
+      if (!out.ok) this.error(`error: ${out.stderr}`);
+      console.info(out.stdout);
+    } else {
+      const out = $`systemctl --user list-timers ${name} -o json`;
+      if (!out.ok) this.error(`error: ${out.stderr}`);
+      const timerInfo = JSON.parse(out.stdout);
+      const nextRun = new Date(timerInfo[0].next / 1000);
+      console.info(
+        `Timer created: next run of ${chalk.cyan(name)} at ${chalk.green(nextRun.toLocaleString())}`
+      );
     }
   };
 }
