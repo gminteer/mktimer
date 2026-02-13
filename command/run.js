@@ -2,6 +2,8 @@
 /* eslint-disable no-invalid-this */
 import {Temporal} from '@js-temporal/polyfill';
 import chalk from 'chalk';
+import {stdout} from 'node:process';
+import wrapAnsi from 'wrap-ansi';
 
 import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/styles.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
@@ -40,7 +42,8 @@ export default function addRunCommand({
     .usage('<command> [options]')
     .addHelpText(
       'after',
-      `
+      wrapAnsi(
+        `
 ${chalk.whiteBright.bold('Examples:')}
   ${chalk.blue(`${program.name()} run ../../../../../../../../true --foo=bar --every 60seconds 19 min 4 hrs`)} \
 ${chalk.italic(`# runs '/usr/bin/true --foo=bar' every 4hrs 20mins`)}
@@ -48,9 +51,11 @@ ${chalk.italic(`# runs '/usr/bin/true --foo=bar' every 4hrs 20mins`)}
 ${chalk.italic('# attempts to brick your OS every leap year day, names the systemd units "os-killer"')}
 
 ${chalk.whiteBright.bold('Notes:')}
-  Some basic checking and cleanup will be done to parameters: ${chalk.yellow('<command>')} is checked to confirm it exists/is executable, and resolved into a canonical filename, ${chalk.green('<schedule...>')} is validated/normalized by systemd-analyze, and can be either a timespan or a calendar event. Parameters should be single quoted if they contain shell metacharacters (calendar events are full of "*-*-*"), but spaces in parameters should generally work without needing quotes. Parameters not recognized by this command are assumed to be part of the <command> argument; if parameters recognized by this program are intended to be part of the <command> argument, then the command argument should be quoted.
+  Some basic checking and cleanup will be done to parameters: ${chalk.yellow('<command>')} is checked to confirm it exists and is executable, and resolved into a canonical filename, ${chalk.green('<schedule...>')} is validated and normalized by systemd-analyze, and can be either a timespan or a calendar event. Parameters should be single quoted if they contain shell metacharacters (calendar events are full of "*-*-*"), but spaces in parameters should generally work without needing quotes. Parameters not recognized by this command are assumed to be part of the <command> argument; if parameters recognized by this program are intended to be part of the <command> argument, then the command argument should be quoted.
 
-See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of timespan / calendar event formats.`
+See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of timespan / calendar event formats.`,
+        stdout.columns
+      )
     )
     .action(action);
 }
