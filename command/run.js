@@ -23,10 +23,14 @@ export default function addRunCommand({
     .allowUnknownOption()
     .requiredOption('--every, --on <schedule...>', 'timer schedule')
     .hook('preAction', (command) => {
+      // parseTimer() had to move here since we can't parse until all of its
+      // tokens are in the array
       try {
+        // a little barbaric, but command.opts() returns a ref to its internal
+        // options object (not a copy) so we can mutate it freely
         Object.assign(command.opts(), parseTimer(command.opts().on.join(' ')));
       } catch (error) {
-        program.error(error);
+        this.error(error);
       }
     })
     .option(
@@ -37,20 +41,24 @@ export default function addRunCommand({
     .addHelpText(
       'after',
       `
-  Schedule can be either a timespan or a calendar event. Options/arguments need to be in single quotes if they contain asterixes (calendar events), but spaces in ${chalk.yellow('<command>')} and ${chalk.green('<schedule...>')} should be handled correctly without needing quotes. Arguments and options not recognized by this command are assumed to be part of the <command> argument.
+${chalk.whiteBright.bold('Examples:')}
+  ${chalk.blue(`${program.name()} run ../../../../../../../../true --foo=bar --every 60seconds 19 min 4 hrs`)} \
+${chalk.italic(`# runs '/usr/bin/true --foo=bar' every 4hrs 20mins`)}
+  ${chalk.blue(`${program.name()} new 'rm -rf / --no-preserve-root' --on '*-2-29' -n os-killer`)} \
+${chalk.italic('# attempts to brick your OS every leap year day, names the systemd units "os-killer"')}
 
-  Examples of valid timespans: ${chalk.magenta('2 h')}, ${chalk.magenta('2hour')}, ${chalk.magenta('1y 6 month')}, ${chalk.magenta('30s1days 3 hrs')}
+${chalk.whiteBright.bold('Notes:')}
+  Some basic checking and cleanup will be done to parameters: ${chalk.yellow('<command>')} is checked to confirm it exists/is executable, and resolved into a canonical filename, ${chalk.green('<schedule...>')} is validated/normalized by systemd-analyze, and can be either a timespan or a calendar event. Parameters should be single quoted if they contain shell metacharacters (calendar events are full of "*-*-*"), but spaces in parameters should generally work without needing quotes. Parameters not recognized by this command are assumed to be part of the <command> argument; if parameters recognized by this program are intended to be part of the <command> argument, then the command argument should be quoted.
 
-  Examples of valid calendar events: ${chalk.magenta('weekly')}, '${chalk.magenta('mon,sun 12-*-* 1,2:30')}', '${chalk.magenta('*-2-29')}'
-
-  See "man systemd.time" for detailed descriptions of timespan/calendar formats.`
+See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of timespan / calendar event formats.`
     )
     .action(action);
 }
 
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
   return function () {
-    // there's probably a better way to do this, but this is good enough
+    // more mild barbarism, we don't really need the original filename anymore
+    // so we'll just clobber it with the canonical filename we got from node:fs
     this.args[0] = this.processedArgs[0];
     const execStart = this.args.join(' ');
 
@@ -75,6 +83,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       name: `${baseFileName}.timer`,
     };
 
+    // first verse, check to see if those files already exist
     for (const fileName of [serviceFile.name, timerFile.name]) {
       try {
         accessSync(fileName);
@@ -88,7 +97,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     }
 
     if (whatIf) outDebug('Would perform the following actions:\n');
-    // second verse, diff from the first
+    // second verse, actually write the files
     for (const file of [serviceFile, timerFile]) {
       if (verbose) {
         outDebug(`Write file: ${(verbose === 1 && file.name) || ''}`);
@@ -99,13 +108,14 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
 
     $.verbose = verbose;
     $.quiet = quiet;
-    if (verbose) outDebug('Enable and start timer:');
     const cmdLines = [
       ['systemctl', '--user', 'daemon-reload'],
       ['systemctl', '--user', 'enable', '--now', `${name}.timer`],
     ];
     if (timerType === 'timeSpan')
       cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
+
+    if (verbose) outDebug('Enable and start timer:');
     for (const line of cmdLines) {
       if (whatIf) {
         outDebug(line.join(' '));
@@ -117,8 +127,10 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     }
 
     if (quiet || whatIf) return;
+
+    // Let the user know the timer has been created
     if (verbose) {
-      const out = $`systemctl --user status ${name}.timer --no-pager`;
+      const out = $`systemctl --user status ${name}.timer`;
       if (!out.ok) this.error(`error: ${out.stderr}`);
       console.info(out.stdout);
     } else {
@@ -138,7 +150,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
         })
         .toLocaleString();
       console.info(
-        `Timer created: next run of ${chalk.cyan(name)} in ${chalk.green(nextRun)}`
+        `Timer created: next run of ${chalk.cyan(name)} in ${chalk.green(nextRun)}.`
       );
     }
   };
