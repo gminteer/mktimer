@@ -1,3 +1,4 @@
 {
-  "terminal.integrated.defaultProfile.linux": "JavaScript Debug Terminal"
+  "terminal.integrated.defaultProfile.linux": "JavaScript Debug Terminal",
+  "javascript.preferences.importModuleSpecifierEnding": "js"
 }
