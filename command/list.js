@@ -51,7 +51,6 @@ export function makeListAction({$}) {
 
       const timerName = timer.unit.split('.')[0];
       const serviceName = timer.activates.split('.')[0];
-
       const timerLine =
         (timerName === serviceName && timerName) ||
         `${timerName} ${chalk.yellowBright(`=> ${serviceName}`)}`;

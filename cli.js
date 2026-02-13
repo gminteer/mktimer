@@ -6,8 +6,8 @@ const $ = $_({nothrow: true, quiet: true, sync: true});
 
 import addListCommand, {makeListAction} from './command/list.js';
 import addRunCommand, {makeRunAction} from './command/run.js';
-import program from './lib/common.js';
 import {makeParseExecStart, makeParseTimer} from './lib/parsers.js';
+import program from './lib/styles.js';
 import pkg from './package.json' with {type: 'json'};
 
 const parseExecStart = makeParseExecStart(accessSync, realpathSync);

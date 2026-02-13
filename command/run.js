@@ -3,7 +3,7 @@
 import {Temporal} from '@js-temporal/polyfill';
 import chalk from 'chalk';
 
-import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/common.js';
+import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/styles.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 const outWarn = (str) => console.warn(warnStyle(str));
