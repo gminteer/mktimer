@@ -125,9 +125,20 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       const out = $`systemctl --user list-timers ${name} -o json`;
       if (!out.ok) this.error(`error: ${out.stderr}`);
       const timerInfo = JSON.parse(out.stdout);
-      const nextRun = new Date(timerInfo[0].next / 1000);
+      const nextRun = Temporal.Now.instant()
+        .until(
+          Temporal.Instant.fromEpochMilliseconds(
+            Math.floor(timerInfo[0].next / 1000)
+          )
+        )
+        .round({
+          largestUnit: 'years',
+          relativeTo: Temporal.Now.plainDateISO(),
+          smallestUnit: 'minutes',
+        })
+        .toLocaleString();
       console.info(
-        `Timer created: next run of ${chalk.cyan(name)} at ${chalk.green(nextRun.toLocaleString())}`
+        `Timer created: next run of ${chalk.cyan(name)} in ${chalk.green(nextRun)}`
       );
     }
   };
