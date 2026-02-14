@@ -1,9 +1,10 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
-import {Temporal} from '@js-temporal/polyfill';
 import chalk from 'chalk';
 import {Option} from 'commander';
 import TtyTable from 'tty-table';
+
+import {getTimeDelta} from '../lib/utils.js';
 
 export default function addListCommand({action, program}) {
   return program
@@ -12,11 +13,13 @@ export default function addListCommand({action, program}) {
     .description('lists timers')
     .argument('[filter]', 'only display timers matching [filter]')
     .option('-t, --show-transient', 'show transient timers')
-    .addOption(new Option('--all', 'show all timers').implies('showTransient'))
+    .addOption(
+      new Option('-a, --all', 'show all timers').implies('showTransient')
+    )
     .action(action);
 }
 
-export function makeListAction({$}) {
+export function makeListAction($) {
   return function (filter, _, command) {
     const {all, showTransient, verbose} = command.optsWithGlobals();
     const cmdLine = ['systemctl', '--user', '--output', 'json', 'list-timers'];
@@ -36,76 +39,39 @@ export function makeListAction({$}) {
       const isTransient = timerInfo.stdout
         .split('\n')
         .includes('Transient=yes');
-      if (isTransient && !showTransient) {
+      if (!showTransient && isTransient) {
         if (verbose) console.debug(`Skipping transient timer: ${timer.unit}`);
         continue;
       }
 
-      // slicing and dicing
-      const execStart = serviceInfo.stdout
+      // slicing and dicing for the ExecStart line in the .service unit
+      let execStart = serviceInfo.stdout
         .split('\n')
         .find((line) => line.includes('ExecStart='))
         .split(';')
         .find((token) => token.includes('argv[]='))
-        .split('=')[1];
+        .split('=');
+      // throw out everything before and including the first '=' character
+      execStart.shift();
+      execStart = execStart.join('=');
 
       const timerName = timer.unit.split('.')[0];
       const serviceName = timer.activates.split('.')[0];
-      const timerLine =
-        (timerName === serviceName && timerName) ||
-        `${timerName} ${chalk.yellowBright(`=> ${serviceName}`)}`;
+      const units =
+        (timerName !== serviceName &&
+          `${timerName} ${chalk.yellowBright(`→ ${serviceName}`)}`) ||
+        timerName;
 
-      // there's a "left" field in the systemctl output that's supposed to be
-      // the number of microseconds until the next run, but it's busted in
-      // systemd 258 and is always the same value as "next" (timestamp for the
-      // next run). oh well it's easy enough to calculate on our end
-      const nextRun =
-        (timer.next &&
-          Temporal.Instant.fromEpochMilliseconds(
-            Math.floor(timer.next / 1000)
-          )) ||
-        'never';
-      const timeLeft =
-        (nextRun !== 'never' &&
-          Temporal.Now.instant()
-            .until(nextRun)
-            .round({
-              largestUnit: 'years',
-              relativeTo: Temporal.Now.plainDateISO(),
-              smallestUnit: 'minutes',
-            })
-            .toLocaleString()) ||
-        nextRun;
+      // there are "left" and "passed" fields in the output from systemd, but
+      // I don't think they actually work correctly ("left" clearly doesn't
+      // it's the same as "next", "passed" looks like a timeDelta but it
+      // isn't microseconds since now which is what I'd expect it to be
+      const next = (timer.next && getTimeDelta(timer.next)) || 'never';
+      const last = (timer.last && getTimeDelta(timer.last)) || 'never';
 
-      // I think the "passed" field is also borked, it looks like it should be
-      // a duration (in microseconds, presumably), but that doesn't line up
-      // with the human readable durations systemctl --list-timers emits
-      const lastRun =
-        (timer.last &&
-          Temporal.Instant.fromEpochMilliseconds(
-            Math.floor(timer.last / 1000)
-          )) ||
-        'never';
-      const passed =
-        (lastRun !== 'never' &&
-          Temporal.Now.instant()
-            .since(lastRun)
-            .round({
-              largestUnit: 'years',
-              relativeTo: Temporal.Now.plainDateISO(),
-              smallestUnit: 'minutes',
-            })
-            .toLocaleString()) ||
-        lastRun;
-
-      timers.push({
-        execStart,
-        passed,
-        timeLeft,
-        timer: timerLine,
-      });
+      timers.push({execStart, last, next, units});
     }
-    timers.sort((a, b) => a.timer.localeCompare(b.timer));
+    timers.sort((a, b) => a.units.localeCompare(b.units));
 
     const table = new TtyTable(
       [
@@ -115,7 +81,7 @@ export function makeListAction({$}) {
           color: 'cyan',
           headerAlign: 'right',
           headerColor: 'cyanBright',
-          value: 'timer',
+          value: 'units',
         },
         {
           alias: chalk.bold('Run'),
@@ -130,29 +96,32 @@ export function makeListAction({$}) {
           formatter: function (value) {
             return value === 'never'
               ? this.style(value, 'redBright')
-              : `${value} ago`;
+              : `+${value}`;
           },
           headerAlign: 'left',
           headerColor: 'greenBright',
-          value: 'passed',
+          paddingLeft: 0,
+          paddingRight: 0,
+          value: 'last',
         },
         {
           alias: chalk.bold('Next'),
           align: 'left',
           color: 'magenta',
           formatter: function (value) {
-            return value === 'never'
-              ? this.style(value, 'redBright')
-              : `in ${value}`;
+            return value === 'never' ? this.style(value, 'redBright') : value;
           },
           headerAlign: 'left',
           headerColor: 'magentaBright',
-          value: 'timeLeft',
+          paddingLeft: 0,
+          paddingRight: 0,
+          value: 'next',
         },
       ],
       timers,
       {borderColor: 'gray', compact: true}
     );
+
     console.info(table.render());
   };
 }
