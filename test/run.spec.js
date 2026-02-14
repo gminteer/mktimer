@@ -5,7 +5,7 @@ import {beforeEach, describe, it} from 'mocha';
 import {spy} from 'sinon';
 
 import addRunCommand, {makeRunAction} from '../command/run.js';
-import program from '../lib/common.js';
+import program from '../lib/styles.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 
 function $() {

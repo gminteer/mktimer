@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {beforeEach, describe, it} from 'mocha';
 import {$ as $_} from 'zx';
 
-import {makeParseExecStart, makeParseTimer} from '../lib/parsers.js';
+import {makeParseExecStart, makeParseTimer} from '../lib/utils.js';
 const $ = $_({nothrow: true, sync: true, verbose: true});
 
 function accessSync(file) {
@@ -21,7 +21,7 @@ beforeEach(() => {
   realPathSync.shouldFail = false;
 });
 
-describe('parser factory', () => {
+describe('parser factories', () => {
   describe('make execStart parser', () => {
     const parseExecStart = makeParseExecStart(accessSync, realPathSync);
     const parse = () => parseExecStart('file');
