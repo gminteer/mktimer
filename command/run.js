@@ -132,7 +132,6 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       }
       const out = $$`${line}`;
       if (!out.ok) this.error(`error: ${out.stderr.trim()}`);
-      if (verbose) console.debug(out.stderr.trim());
     }
 
     if (quiet || whatIf) return;
