@@ -1,7 +1,7 @@
 // commander binds "this" to the command object
 
 import chalk from 'chalk';
-import {Option, program} from 'commander';
+import {Option} from 'commander';
 import TtyTable from 'tty-table';
 
 import {getTimeDelta} from '../lib/utils.js';
@@ -20,15 +20,18 @@ export default function addListCommand({action, program}) {
 }
 
 export function makeListAction({$, getTimerInfo}) {
-  return function (filter, _, command) {
-    const {all, showTransient, verbose} = command.optsWithGlobals();
+  return function (filter, _, program) {
+    const {all, showTransient, verbose} = program.optsWithGlobals();
     const cmdLine = ['systemctl', '--user', '--output', 'json', 'list-timers'];
     if (all) cmdLine.push('--all');
     if (filter) cmdLine.push(filter);
     const out = $`${cmdLine}`;
-    if (!out.ok) command.error(out.stderr);
+    if (!out.ok) program.error(out.stderr);
 
     const rawTimers = JSON.parse(out);
+    if (rawTimers.length === 0)
+      program.error(`No timers matching "${filter}" found.`);
+
     const timers = [];
     for (const timer of rawTimers) {
       let timerInfo;
