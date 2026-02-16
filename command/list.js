@@ -1,10 +1,10 @@
 // commander binds "this" to the command object
-/* eslint-disable no-invalid-this */
+
 import chalk from 'chalk';
 import {Option} from 'commander';
 import TtyTable from 'tty-table';
 
-import {getTimeDelta} from '../lib/utils.js';
+import {getTimeDelta, makeGetTimerInfo} from '../lib/utils.js';
 
 export default function addListCommand({action, program}) {
   return program
@@ -20,6 +20,8 @@ export default function addListCommand({action, program}) {
 }
 
 export function makeListAction($) {
+  const getTimerInfo = makeGetTimerInfo($);
+
   return function (filter, _, command) {
     const {all, showTransient, verbose} = command.optsWithGlobals();
     const cmdLine = ['systemctl', '--user', '--output', 'json', 'list-timers'];
@@ -31,12 +33,9 @@ export function makeListAction($) {
     const rawTimers = JSON.parse(out);
     const timers = [];
     for (const timer of rawTimers) {
-      const timerInfo = $`systemctl --user show ${timer.unit}`;
-      if (!timerInfo.ok) this.error(timerInfo.stderr);
-      const serviceInfo = $`systemctl --user show ${timer.activates}`;
-      if (!serviceInfo.ok) this.error(serviceInfo.stderr);
+      const timerInfo = getTimerInfo(timer.unit, {details: true});
 
-      const isTransient = timerInfo.stdout
+      const isTransient = timerInfo.timerDetails
         .split('\n')
         .includes('Transient=yes');
       if (!showTransient && isTransient) {
@@ -45,13 +44,15 @@ export function makeListAction($) {
       }
 
       // slicing and dicing for the ExecStart line in the .service unit
-      let execStart = serviceInfo.stdout
+      let execStart = timerInfo.serviceDetails
         .split('\n')
         .find((line) => line.includes('ExecStart='))
         .split(';')
         .find((token) => token.includes('argv[]='))
         .split('=');
-      // throw out everything before and including the first '=' character
+      // throw out everything before and including the first '=' character, but
+      // we should probably restore the rest of them because they were part of
+      // the ExecStart line
       execStart.shift();
       execStart = execStart.join('=');
 
