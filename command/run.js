@@ -75,6 +75,8 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     const {force, on, quiet, timerType, verbose, whatIf} =
       this.optsWithGlobals();
 
+    const $$ = $({quiet, verbose});
+
     // hack the path and args off the execStart line if we don't have a name
     const name =
       this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
@@ -115,8 +117,6 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
     }
 
-    $.verbose = verbose;
-    $.quiet = quiet;
     const cmdLines = [
       ['systemctl', '--user', 'daemon-reload'],
       ['systemctl', '--user', 'enable', '--now', `${name}.timer`],
@@ -130,7 +130,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
         outDebug(line.join(' '));
         continue;
       }
-      const out = $`${line}`;
+      const out = $$`${line}`;
       if (!out.ok) this.error(`error: ${out.stderr.trim()}`);
       if (verbose) console.debug(out.stderr.trim());
     }
@@ -139,11 +139,10 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
 
     // Let the user know the timer has been created
     if (verbose) {
-      const out = $`systemctl --user status ${name}.timer`;
-      if (!out.ok) this.error(`error: ${out.stderr}`);
-      console.info(out.stdout);
+      const out = $$`systemctl --user status ${name}.timer`;
+      if (!out.ok) return;
     } else {
-      const out = $`systemctl --user list-timers ${name} -o json`;
+      const out = $$`systemctl --user list-timers ${name} -o json`;
       if (!out.ok) this.error(`error: ${out.stderr}`);
       const timerInfo = JSON.parse(out.stdout);
       const {next} = timerInfo[0];

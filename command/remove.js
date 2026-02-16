@@ -16,8 +16,7 @@ export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
   return function (name, _, program) {
     const {quiet, verbose, whatIf} = program.optsWithGlobals();
 
-    $.quiet = quiet;
-    $.verbose = verbose;
+    const $$ = $({quiet, verbose});
     const outDebug = whatIf
       ? (str) => console.debug(whatIfStyle(str))
       : (str) => console.debug(verboseStyle(str));
@@ -34,7 +33,7 @@ export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
     if (whatIf) {
       outDebug(`systemctl --user disable ${timerInfo.unit} --now`);
     } else {
-      const out = $`systemctl --user disable ${timerInfo.unit} --now`;
+      const out = $$`systemctl --user disable ${timerInfo.unit} --now`;
       if (!out.ok) this.error(timerInfo.stderr);
     }
     if (verbose) outDebug('Remove units:');
