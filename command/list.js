@@ -1,7 +1,7 @@
 // commander binds "this" to the command object
 
 import chalk from 'chalk';
-import {Option} from 'commander';
+import {Option, program} from 'commander';
 import TtyTable from 'tty-table';
 
 import {getTimeDelta} from '../lib/utils.js';
@@ -31,7 +31,12 @@ export function makeListAction({$, getTimerInfo}) {
     const rawTimers = JSON.parse(out);
     const timers = [];
     for (const timer of rawTimers) {
-      const timerInfo = getTimerInfo(timer.unit, {details: true});
+      let timerInfo;
+      try {
+        timerInfo = getTimerInfo(timer.unit, {details: true});
+      } catch (error) {
+        program.error(error);
+      }
 
       const isTransient = timerInfo.timerDetails
         .split('\n')
