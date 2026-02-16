@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import {Option} from 'commander';
 import TtyTable from 'tty-table';
 
-import {getTimeDelta, makeGetTimerInfo} from '../lib/utils.js';
+import {getTimeDelta} from '../lib/utils.js';
 
 export default function addListCommand({action, program}) {
   return program
@@ -19,9 +19,7 @@ export default function addListCommand({action, program}) {
     .action(action);
 }
 
-export function makeListAction($) {
-  const getTimerInfo = makeGetTimerInfo($);
-
+export function makeListAction({$, getTimerInfo}) {
   return function (filter, _, command) {
     const {all, showTransient, verbose} = command.optsWithGlobals();
     const cmdLine = ['systemctl', '--user', '--output', 'json', 'list-timers'];
@@ -101,8 +99,6 @@ export function makeListAction($) {
           },
           headerAlign: 'left',
           headerColor: 'greenBright',
-          paddingLeft: 0,
-          paddingRight: 0,
           value: 'last',
         },
         {
@@ -114,8 +110,6 @@ export function makeListAction($) {
           },
           headerAlign: 'left',
           headerColor: 'magentaBright',
-          paddingLeft: 0,
-          paddingRight: 0,
           value: 'next',
         },
       ],

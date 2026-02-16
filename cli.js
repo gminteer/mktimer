@@ -8,7 +8,11 @@ import addListCommand, {makeListAction} from './command/list.js';
 import addRemoveCommand, {makeRemoveAction} from './command/remove.js';
 import addRunCommand, {makeRunAction} from './command/run.js';
 import program from './lib/styles.js';
-import {makeParseExecStart, makeParseTimer} from './lib/utils.js';
+import {
+  makeGetTimerInfo,
+  makeParseExecStart,
+  makeParseTimer,
+} from './lib/utils.js';
 import pkg from './package.json' with {type: 'json'};
 
 // Who needs fancy dependancy injection frameworks when you can just write the
@@ -20,7 +24,7 @@ const parseTimer = makeParseTimer($);
 program.name(pkg.name).description(pkg.description).version(pkg.version);
 
 addListCommand({
-  action: makeListAction($),
+  action: makeListAction({$, getTimerInfo: makeGetTimerInfo($)}),
   program,
 });
 
