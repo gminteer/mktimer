@@ -1,8 +1,8 @@
+import {makeParseExecStart, makeParseTimer} from '#lib/utils.js';
 import {expect} from 'chai';
 import {beforeEach, describe, it} from 'mocha';
 import {$ as $_} from 'zx';
 
-import {makeParseExecStart, makeParseTimer} from '../lib/utils.js';
 const $ = $_({nothrow: true, sync: true, verbose: true});
 
 function accessSync(file) {
