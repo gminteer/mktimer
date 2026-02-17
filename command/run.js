@@ -4,11 +4,9 @@ import chalk from 'chalk';
 import {stdout} from 'node:process';
 import wrapAnsi from 'wrap-ansi';
 
-import {fileBox, verboseStyle, warnStyle, whatIfStyle} from '../lib/styles.js';
+import {cout, fileBox} from '../lib/styles.js';
 import {serviceTemplate, timerTemplate} from '../lib/templates.js';
 import {getTimeDelta} from '../lib/utils.js';
-
-const outWarn = (str) => console.warn(warnStyle(str));
 
 export default function addRunCommand({
   action,
@@ -66,7 +64,7 @@ See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of t
 }
 
 export function makeRunAction({$, accessSync, env, writeFileSync}) {
-  return function () {
+  return async function () {
     // more mild barbarism, we don't really need the original filename anymore
     // so we'll just clobber it with the canonical filename we got from node:fs
     this.args[0] = this.processedArgs[0];
@@ -76,14 +74,11 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       this.optsWithGlobals();
 
     const $$ = $({quiet, verbose});
+    cout.whatIf = whatIf;
 
     // hack the path and args off the execStart line if we don't have a name
     const name =
       this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
-
-    const outDebug = whatIf
-      ? (str) => console.debug(whatIfStyle(str))
-      : (str) => console.debug(verboseStyle(str));
 
     const baseFileName = `${env.HOME}/.config/systemd/user/${name}`;
     const serviceFile = {
@@ -100,19 +95,19 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       try {
         accessSync(fileName);
         if (!force) this.error(`error: ${fileName} exists`);
-        if (!quiet) outWarn(`overwriting ${fileName}`);
+        if (!quiet) cout.warn(`overwriting ${fileName}`);
       } catch (error) {
         // we were hoping for error 'ENOENT' all along
         if (error.code !== 'ENOENT') this.error(error.message);
       }
     }
 
-    if (whatIf) outDebug('Would perform the following actions:\n');
+    if (whatIf) cout.debug('Would perform the following actions:\n');
     // second verse, actually write the files
     for (const file of [serviceFile, timerFile]) {
       if (verbose) {
-        outDebug(`Write file: ${(verbose === 1 && file.name) || ''}`);
-        if (verbose > 1) outDebug(fileBox(file));
+        cout.debug(`Write file: ${(verbose === 1 && file.name) || ''}`);
+        if (verbose > 1) cout.debug(await fileBox(file));
       }
       if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
     }
@@ -124,10 +119,10 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     if (timerType === 'timeSpan')
       cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
 
-    if (verbose) outDebug('Enable and start timer:');
+    if (verbose) cout.debug('Enable and start timer:');
     for (const line of cmdLines) {
       if (whatIf) {
-        outDebug(line.join(' '));
+        cout.debug(line.join(' '));
         continue;
       }
       const out = $$`${line}`;
@@ -145,7 +140,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
       if (!out.ok) this.error(`error: ${out.stderr}`);
       const timerInfo = JSON.parse(out.stdout);
       const {next} = timerInfo[0];
-      console.info(
+      cout.info(
         `Timer created: next run of ${chalk.cyan(name)} in ${chalk.green(getTimeDelta(next))}.`
       );
     }

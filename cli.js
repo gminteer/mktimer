@@ -7,7 +7,7 @@ const $ = $_({nothrow: true, quiet: true, sync: true});
 import addListCommand, {makeListAction} from './command/list.js';
 import addRemoveCommand, {makeRemoveAction} from './command/remove.js';
 import addRunCommand, {makeRunAction} from './command/run.js';
-import program from './lib/styles.js';
+import program from './lib/base-command.js';
 import {
   makeGetTimerInfo,
   makeParseExecStart,
@@ -41,4 +41,4 @@ addRunCommand({
   program,
 });
 
-program.parse();
+program.parseAsync();

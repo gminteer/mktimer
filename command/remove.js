@@ -2,7 +2,8 @@
 /* eslint-disable no-invalid-this */
 import chalk from 'chalk';
 
-import {verboseStyle, whatIfStyle} from '../lib/styles.js';
+import {cout} from '../lib/styles.js';
+
 export default function addRemoveCommand({action, program}) {
   return program
     .command('remove')
@@ -17,9 +18,7 @@ export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
     const {quiet, verbose, whatIf} = program.optsWithGlobals();
 
     const $$ = $({quiet, verbose});
-    const outDebug = whatIf
-      ? (str) => console.debug(whatIfStyle(str))
-      : (str) => console.debug(verboseStyle(str));
+    cout.whatIf = whatIf;
 
     let timerInfo;
     try {
@@ -27,22 +26,22 @@ export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
     } catch (error) {
       program.error(error);
     }
-    if (whatIf) outDebug('Would perform the following actions:');
+    if (whatIf) cout.debug('Would perform the following actions:');
 
-    if (verbose) outDebug('Disable timer:');
+    if (verbose) cout.debug('Disable timer:');
     if (whatIf) {
-      outDebug(`systemctl --user disable ${timerInfo.unit} --now`);
+      cout.debug(`systemctl --user disable ${timerInfo.unit} --now`);
     } else {
       const out = $$`systemctl --user disable ${timerInfo.unit} --now`;
       if (!out.ok) this.error(timerInfo.stderr);
     }
-    if (verbose) outDebug('Remove units:');
+    if (verbose) cout.debug('Remove units:');
     const fileNames = [
       `${env.HOME}/.config/systemd/user/${timerInfo.unit}`,
       `${env.HOME}/.config/systemd/user/${timerInfo.activates}`,
     ];
     for (const file of fileNames) {
-      if (verbose) outDebug(file);
+      if (verbose) cout.debug(file);
       if (!whatIf) rmSync(file);
     }
     if (!whatIf) console.info(`Timer: ${chalk.cyan(name)} removed.`);
