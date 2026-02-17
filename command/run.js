@@ -107,7 +107,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     for (const file of [serviceFile, timerFile]) {
       if (verbose) {
         cout.debug(`Write file: ${(verbose === 1 && file.name) || ''}`);
-        if (verbose > 1) cout.debug(await fileBox(file));
+        if (verbose > 1) console.debug(await fileBox(file));
       }
       if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
     }
