@@ -1,10 +1,9 @@
 // commander binds "this" to the command object
 
+import {getTimeDelta} from '#lib/utils.js';
 import chalk from 'chalk';
 import {Option} from 'commander';
 import TtyTable from 'tty-table';
-
-import {getTimeDelta} from '../lib/utils.js';
 
 export default function addListCommand({action, program}) {
   return program

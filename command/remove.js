@@ -1,8 +1,7 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
+import {cout} from '#lib/styles.js';
 import chalk from 'chalk';
-
-import {cout} from '../lib/styles.js';
 
 export default function addRemoveCommand({action, program}) {
   return program

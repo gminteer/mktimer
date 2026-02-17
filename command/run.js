@@ -1,12 +1,11 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
+import {cout, fileBox} from '#lib/styles.js';
+import {serviceTemplate, timerTemplate} from '#lib/templates.js';
+import {getTimeDelta} from '#lib/utils.js';
 import chalk from 'chalk';
 import {stdout} from 'node:process';
 import wrapAnsi from 'wrap-ansi';
-
-import {cout, fileBox} from '../lib/styles.js';
-import {serviceTemplate, timerTemplate} from '../lib/templates.js';
-import {getTimeDelta} from '../lib/utils.js';
 
 export default function addRunCommand({
   action,
