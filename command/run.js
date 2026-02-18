@@ -1,6 +1,6 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
-import {cout, fileBox} from '#lib/styles.js';
+import {cout, fileBox, showCommand} from '#lib/styles.js';
 import {serviceTemplate, timerTemplate} from '#lib/templates.js';
 import {getTimeDelta} from '#lib/utils.js';
 import chalk from 'chalk';
@@ -113,7 +113,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
 
     const cmdLines = [
       ['systemctl', '--user', 'daemon-reload'],
-      ['systemctl', '--user', 'enable', '--now', `${name}.timer`],
+      ['systemctl', '--user', 'enable', `${name}.timer`, '--now'],
     ];
     if (timerType === 'timeSpan')
       cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
@@ -121,7 +121,7 @@ export function makeRunAction({$, accessSync, env, writeFileSync}) {
     if (verbose) cout.debug('Enable and start timer:');
     for (const line of cmdLines) {
       if (whatIf) {
-        cout.debug(line.join(' '));
+        showCommand(line.join(' '));
         continue;
       }
       const out = $$`${line}`;

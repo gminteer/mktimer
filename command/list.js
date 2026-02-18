@@ -28,8 +28,7 @@ export function makeListAction({$, getTimerInfo}) {
     if (!out.ok) program.error(out.stderr);
 
     const rawTimers = JSON.parse(out);
-    if (rawTimers.length === 0)
-      program.error(`No timers matching "${filter}" found.`);
+    if (rawTimers.length === 0) program.error(`No timers match "${filter}".`);
 
     const timers = [];
     for (const timer of rawTimers) {

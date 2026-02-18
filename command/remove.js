@@ -1,6 +1,6 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
-import {cout} from '#lib/styles.js';
+import {cout, showCommand} from '#lib/styles.js';
 import chalk from 'chalk';
 
 export default function addRemoveCommand({action, program}) {
@@ -29,7 +29,7 @@ export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
 
     if (verbose) cout.debug('Disable timer:');
     if (whatIf) {
-      cout.debug(`systemctl --user disable ${timerInfo.unit} --now`);
+      showCommand(`systemctl --user disable ${timerInfo.unit} --now`);
     } else {
       const out = $$`systemctl --user disable ${timerInfo.unit} --now`;
       if (!out.ok) this.error(timerInfo.stderr);
