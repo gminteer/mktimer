@@ -116,7 +116,7 @@ async function buildDisplayList(
       execStart.shift();
       execStart = execStart.join('=');
     } else {
-      const execStart = '<unknown>';
+      execStart = '<unknown>';
     }
     const timerName = timer.unit.split('.')[0];
     const serviceName = timer.activates.split('.')[0];
