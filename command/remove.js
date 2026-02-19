@@ -24,11 +24,10 @@ async function action(name, _, program) {
     timer = await listTimers({filter: name});
     if (timer.length > 1) program.error(`${name} matched multiple timers`);
     timer = timer[0];
+
     if (whatIf) cout.debug('Would perform the following actions:');
 
-    if (verbose) cout.debug('Disable timer:');
     await disableTimer(timer.unit, {verbose, whatIf});
-
     await rmUnits({
       service: timer.activates,
       timer: timer.unit,

@@ -17,20 +17,6 @@ export default function addRunCommand(program) {
     .allowUnknownOption()
     .argument('<command>', 'command to run')
     .requiredOption('--every, --on <schedule...>', 'timer schedule')
-    .hook('preAction', async (program) => {
-      // run input validation here sync we can be async
-      try {
-        // it's a little barbaric to be mutating the input parameters, but we
-        // don't need the original values anymore
-        program.args[0] = await validateExecStart(program.args[0]);
-        Object.assign(
-          program.opts(),
-          await validateTimer(program.opts().on.join(' '))
-        );
-      } catch (error) {
-        program.error(error);
-      }
-    })
     .option(
       '-n, --name <name>',
       'if not specified timer will be named after executable'
@@ -56,14 +42,13 @@ See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of t
         {trim: false}
       )
     )
+    .hook('preAction', validate) // run input validation here since we can be async
     .action(action);
 }
 
 async function action() {
   const execStart = this.args.join(' ');
-
   const {force, on, quiet, timerType, verbose, whatIf} = this.optsWithGlobals();
-
   cout.whatIf = whatIf;
 
   // hack the path and args off the execStart line if we don't have a name
@@ -71,6 +56,7 @@ async function action() {
     this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
 
   try {
+    if (whatIf) cout.debug('Would perform the following actions:');
     await writeUnits({
       execStart,
       force,
@@ -81,9 +67,22 @@ async function action() {
       verbose,
       whatIf,
     });
-
     await enableTimer({name, quiet, timerType, verbose, whatIf});
   } catch (error) {
     this.error(error);
+  }
+}
+
+async function validate(program) {
+  try {
+    // it's a little barbaric to just stomp on input parameters,
+    // but we don't need the original values anymore
+    program.args[0] = await validateExecStart(program.args[0]);
+    Object.assign(
+      program.opts(),
+      await validateTimer(program.opts().on.join(' '))
+    );
+  } catch (error) {
+    program.error(error);
   }
 }

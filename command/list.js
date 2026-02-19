@@ -28,55 +28,15 @@ export default function addListCommand(program) {
 async function action(filter, _, program) {
   const {all, onlyTransient, showTransient, verbose} =
     program.optsWithGlobals();
-  const timerList = await listTimers({all, filter});
+  const timers = await listTimers({all, filter});
 
-  if (timerList.length === 0) program.error(`No timers match "${filter}".`);
+  if (timers.length === 0) program.error(`No timers match "${filter}".`);
 
-  const displayList = [];
-  for (const timer of timerList) {
-    let info;
-    try {
-      info = await getTimerDetails({timer: timer.unit});
-    } catch (error) {
-      program.error(error);
-    }
-
-    if (!showTransient && info.timer.transient === 'yes') {
-      if (verbose) cout.debug(`Skipping transient timer: ${timer.unit}`);
-      continue;
-    }
-    if (onlyTransient && info.timer.transient === 'no') {
-      if (verbose) cout.debug(`Skipping non-transient timer: ${timer.unit}`);
-      continue;
-    }
-
-    let execStart = info.service.execStart
-      .split(';')
-      .find((token) => token.includes('argv[]='))
-      .split('=');
-    execStart.shift();
-    execStart = execStart.join('=');
-
-    const timerName = timer.unit.split('.')[0];
-    const serviceName = timer.activates.split('.')[0];
-    const units =
-      (timerName !== serviceName &&
-        `${timerName} ${chalk.yellowBright(`→ ${serviceName}`)}`) ||
-      timerName;
-
-    // there are "left" and "passed" fields in the output from systemd, but
-    // they don't appear to work ("left" is the same value as next; "passed"
-    // might be a duration but it isn't in microseconds since now), so we'll
-    // just work those values out ourselves
-    // TODO: sometimes the one transient timer on my system doesn't have a
-    // next run scheduled (seems to happen right after it's run) and I'm not
-    // sure why (it looks like it runs every 5 seconds)
-    const next = (timer.next && getDurationStr(timer.next)) || 'never';
-    const last = (timer.last && getDurationStr(timer.last)) || 'never';
-
-    displayList.push({execStart, last, next, units});
-  }
-  displayList.sort((a, b) => a.units.localeCompare(b.units));
+  const displayList = await buildDisplayList(timers, {
+    onlyTransient,
+    showTransient,
+    verbose,
+  });
 
   const table = new TtyTable(
     [
@@ -124,4 +84,51 @@ async function action(filter, _, program) {
   );
 
   console.info(table.render());
+}
+
+async function buildDisplayList(
+  timers,
+  {onlyTransient, showTransient, verbose}
+) {
+  const displayList = [];
+  for (const timer of timers) {
+    const info = await getTimerDetails({timer: timer.unit});
+
+    if (!showTransient && info.timer.transient === 'yes') {
+      if (verbose) cout.debug(`Skipping transient timer: ${timer.unit}`);
+      continue;
+    }
+    if (onlyTransient && info.timer.transient === 'no') {
+      if (verbose) cout.debug(`Skipping non-transient timer: ${timer.unit}`);
+      continue;
+    }
+
+    let execStart = info.service.execStart
+      .split(';')
+      .find((token) => token.includes('argv[]='))
+      .split('=');
+    execStart.shift();
+    execStart = execStart.join('=');
+
+    const timerName = timer.unit.split('.')[0];
+    const serviceName = timer.activates.split('.')[0];
+    const units =
+      (timerName !== serviceName &&
+        `${timerName} ${chalk.yellowBright(`→ ${serviceName}`)}`) ||
+      timerName;
+
+    // there are "left" and "passed" fields in the output from systemd, but
+    // they don't appear to work ("left" is the same value as next; "passed"
+    // might be a duration but it isn't in microseconds since now), so we'll
+    // just work those values out ourselves
+    // TODO: sometimes the one transient timer on my system doesn't have a
+    // next run scheduled (seems to happen right after it's run) and I'm not
+    // sure why (it looks like it runs every 5 seconds)
+    const next = (timer.next && getDurationStr(timer.next)) || 'never';
+    const last = (timer.last && getDurationStr(timer.last)) || 'never';
+
+    displayList.push({execStart, last, next, units});
+  }
+  displayList.sort((a, b) => a.units.localeCompare(b.units));
+  return displayList;
 }

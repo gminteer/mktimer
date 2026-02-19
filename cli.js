@@ -10,7 +10,6 @@ program.name(pkg.name).description(pkg.description).version(pkg.version);
 
 addListCommand(program);
 addRemoveCommand(program);
-
 addRunCommand(program);
 
 program.parseAsync();
