@@ -48,7 +48,8 @@ See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of t
 
 async function action() {
   const execStart = this.args.join(' ');
-  const {force, on, quiet, timerType, verbose, whatIf} = this.optsWithGlobals();
+  const {context, force, on, quiet, timerType, verbose, whatIf} =
+    this.optsWithGlobals();
   cout.whatIf = whatIf;
 
   // hack the path and args off the execStart line if we don't have a name
@@ -58,6 +59,7 @@ async function action() {
   try {
     if (whatIf) cout.debug('Would perform the following actions:');
     await writeUnits({
+      context,
       execStart,
       force,
       name,
@@ -67,7 +69,7 @@ async function action() {
       verbose,
       whatIf,
     });
-    await enableTimer({name, quiet, timerType, verbose, whatIf});
+    await enableTimer({context, name, quiet, timerType, verbose, whatIf});
   } catch (error) {
     this.error(error);
   }

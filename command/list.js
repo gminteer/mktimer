@@ -26,9 +26,9 @@ export default function addListCommand(program) {
 }
 
 async function action(filter, _, program) {
-  const {all, onlyTransient, showTransient, verbose} =
+  const {all, context, onlyTransient, showTransient, verbose} =
     program.optsWithGlobals();
-  const timers = await listTimers({all, filter});
+  const timers = await listTimers({all, context, filter});
 
   if (timers.length === 0) program.error(`No timers match "${filter}".`);
 
@@ -102,14 +102,22 @@ async function buildDisplayList(
       if (verbose) cout.debug(`Skipping non-transient timer: ${timer.unit}`);
       continue;
     }
+    if (info.timer.activeState === 'inactive') {
+      if (verbose) cout.debug(`Skipping inactive timer: ${timer.unit}`);
+      continue;
+    }
 
-    let execStart = info.service.execStart
-      .split(';')
-      .find((token) => token.includes('argv[]='))
-      .split('=');
-    execStart.shift();
-    execStart = execStart.join('=');
-
+    let execStart;
+    if (info?.service?.execStart) {
+      execStart = info.service.execStart
+        .split(';')
+        .find((token) => token.includes('argv[]='))
+        .split('=');
+      execStart.shift();
+      execStart = execStart.join('=');
+    } else {
+      const execStart = '<unknown>';
+    }
     const timerName = timer.unit.split('.')[0];
     const serviceName = timer.activates.split('.')[0];
     const units =
