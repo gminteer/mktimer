@@ -15,7 +15,7 @@ export default function addRemoveCommand(program) {
 }
 
 async function action(name, _, program) {
-  const {quiet, verbose, whatIf} = program.optsWithGlobals();
+  const {context, quiet, verbose, whatIf} = program.optsWithGlobals();
 
   cout.whatIf = whatIf;
 
@@ -27,8 +27,9 @@ async function action(name, _, program) {
 
     if (whatIf) cout.debug('Would perform the following actions:');
 
-    await disableTimer(timer.unit, {verbose, whatIf});
+    await disableTimer(timer.unit, {context, verbose, whatIf});
     await rmUnits({
+      context,
       service: timer.activates,
       timer: timer.unit,
       verbose,
