@@ -1,37 +1,34 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
-import {cout, fileBox, showCommand} from '#lib/styles.js';
-import {serviceTemplate, timerTemplate} from '#lib/templates.js';
-import {getTimeDelta} from '#lib/utils.js';
+import {writeUnits} from '#lib/file.js';
+import {cout} from '#lib/style.js';
+import {enableTimer} from '#lib/timer.js';
+import {validateExecStart, validateTimer} from '#lib/util.js';
 import chalk from 'chalk';
 import {stdout} from 'node:process';
 import wrapAnsi from 'wrap-ansi';
 
-export default function addRunCommand({
-  action,
-  parseExecStart,
-  parseTimer,
-  program,
-}) {
+export default function addRunCommand(program) {
   return program
     .command('run')
     .alias('new')
     .description('create and start a timer')
     .allowExcessArguments()
     .allowUnknownOption()
-    .argument('<command>', 'command to run', parseExecStart)
+    .argument('<command>', 'command to run')
     .requiredOption('--every, --on <schedule...>', 'timer schedule')
-    .hook('preAction', (command) => {
-      // parseTimer() had to move here since we can't parse until all of its
-      // tokens are in the array and requiring the user to quote the schedule
-      // parameter every time felt like bad UX
+    .hook('preAction', async (program) => {
+      // run input validation here sync we can be async
       try {
-        // a little barbaric, but command.opts() returns a ref to its internal
-        // options object (not a copy) so we can mutate it freely, and we're too
-        // late to use .implies to set the timerType anyways
-        Object.assign(command.opts(), parseTimer(command.opts().on.join(' ')));
+        // it's a little barbaric to be mutating the input parameters, but we
+        // don't need the original values anymore
+        program.args[0] = await validateExecStart(program.args[0]);
+        Object.assign(
+          program.opts(),
+          await validateTimer(program.opts().on.join(' '))
+        );
       } catch (error) {
-        this.error(error);
+        program.error(error);
       }
     })
     .option(
@@ -62,86 +59,31 @@ See ${chalk.whiteBright.bold('man systemd.time')} for detailed descriptions of t
     .action(action);
 }
 
-export function makeRunAction({$, accessSync, env, writeFileSync}) {
-  return async function () {
-    // more mild barbarism, we don't really need the original filename anymore
-    // so we'll just clobber it with the canonical filename we got from node:fs
-    this.args[0] = this.processedArgs[0];
-    const execStart = this.args.join(' ');
+async function action() {
+  const execStart = this.args.join(' ');
 
-    const {force, on, quiet, timerType, verbose, whatIf} =
-      this.optsWithGlobals();
+  const {force, on, quiet, timerType, verbose, whatIf} = this.optsWithGlobals();
 
-    const $$ = $({quiet, verbose});
-    cout.whatIf = whatIf;
+  cout.whatIf = whatIf;
 
-    // hack the path and args off the execStart line if we don't have a name
-    const name =
-      this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
+  // hack the path and args off the execStart line if we don't have a name
+  const name =
+    this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
 
-    const baseFileName = `${env.HOME}/.config/systemd/user/${name}`;
-    const serviceFile = {
-      content: serviceTemplate({execStart, name}),
-      name: `${baseFileName}.service`,
-    };
-    const timerFile = {
-      content: timerTemplate({name, on, timerType}),
-      name: `${baseFileName}.timer`,
-    };
+  try {
+    await writeUnits({
+      execStart,
+      force,
+      name,
+      on,
+      quiet,
+      timerType,
+      verbose,
+      whatIf,
+    });
 
-    // first verse, check to see if those files already exist
-    for (const fileName of [serviceFile.name, timerFile.name]) {
-      try {
-        accessSync(fileName);
-        if (!force) this.error(`error: ${fileName} exists`);
-        if (!quiet) cout.warn(`overwriting ${fileName}`);
-      } catch (error) {
-        // we were hoping for error 'ENOENT' all along
-        if (error.code !== 'ENOENT') this.error(error.message);
-      }
-    }
-
-    if (whatIf) cout.debug('Would perform the following actions:\n');
-    // second verse, actually write the files
-    for (const file of [serviceFile, timerFile]) {
-      if (verbose) {
-        cout.debug(`Write file: ${(verbose === 1 && file.name) || ''}`);
-        if (verbose > 1) console.debug(await fileBox(file));
-      }
-      if (!whatIf) writeFileSync(file.name, file.content, {mode: 0o660});
-    }
-
-    const cmdLines = [
-      ['systemctl', '--user', 'daemon-reload'],
-      ['systemctl', '--user', 'enable', `${name}.timer`, '--now'],
-    ];
-    if (timerType === 'timeSpan')
-      cmdLines.push(['systemctl', '--user', 'start', `${name}.service`]);
-
-    if (verbose) cout.debug('Enable and start timer:');
-    for (const line of cmdLines) {
-      if (whatIf) {
-        showCommand(line.join(' '));
-        continue;
-      }
-      const out = $$`${line}`;
-      if (!out.ok) this.error(`error: ${out.stderr.trim()}`);
-    }
-
-    if (quiet || whatIf) return;
-
-    // Let the user know the timer has been created
-    if (verbose) {
-      const out = $$`systemctl --user status ${name}.timer`;
-      if (!out.ok) return;
-    } else {
-      const out = $$`systemctl --user list-timers ${name} -o json`;
-      if (!out.ok) this.error(`error: ${out.stderr}`);
-      const timerInfo = JSON.parse(out.stdout);
-      const {next} = timerInfo[0];
-      cout.info(
-        `Timer created: next run of ${chalk.cyan(name)} in ${chalk.green(getTimeDelta(next))}.`
-      );
-    }
-  };
+    await enableTimer({name, quiet, timerType, verbose, whatIf});
+  } catch (error) {
+    this.error(error);
+  }
 }

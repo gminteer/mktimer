@@ -1,9 +1,11 @@
 // commander binds "this" to the command object
-/* eslint-disable no-invalid-this */
-import {cout, showCommand} from '#lib/styles.js';
+
+import {rmUnits} from '#lib/file.js';
+import {cout} from '#lib/style.js';
+import {disableTimer, listTimers} from '#lib/timer.js';
 import chalk from 'chalk';
 
-export default function addRemoveCommand({action, program}) {
+export default function addRemoveCommand(program) {
   return program
     .command('remove')
     .alias('rm')
@@ -12,37 +14,29 @@ export default function addRemoveCommand({action, program}) {
     .action(action);
 }
 
-export function makeRemoveAction({$, env, getTimerInfo, rmSync}) {
-  return function (name, _, program) {
-    const {quiet, verbose, whatIf} = program.optsWithGlobals();
+async function action(name, _, program) {
+  const {quiet, verbose, whatIf} = program.optsWithGlobals();
 
-    const $$ = $({quiet, verbose});
-    cout.whatIf = whatIf;
+  cout.whatIf = whatIf;
 
-    let timerInfo;
-    try {
-      timerInfo = getTimerInfo(name);
-    } catch (error) {
-      program.error(error);
-    }
+  let timer;
+  try {
+    timer = await listTimers({filter: name});
+    if (timer.length > 1) program.error(`${name} matched multiple timers`);
+    timer = timer[0];
     if (whatIf) cout.debug('Would perform the following actions:');
 
     if (verbose) cout.debug('Disable timer:');
-    if (whatIf) {
-      showCommand(`systemctl --user disable ${timerInfo.unit} --now`);
-    } else {
-      const out = $$`systemctl --user disable ${timerInfo.unit} --now`;
-      if (!out.ok) this.error(timerInfo.stderr);
-    }
-    if (verbose) cout.debug('Remove units:');
-    const fileNames = [
-      `${env.HOME}/.config/systemd/user/${timerInfo.unit}`,
-      `${env.HOME}/.config/systemd/user/${timerInfo.activates}`,
-    ];
-    for (const file of fileNames) {
-      if (verbose) cout.debug(file);
-      if (!whatIf) rmSync(file);
-    }
-    if (!whatIf) console.info(`Timer: ${chalk.cyan(name)} removed.`);
-  };
+    await disableTimer(timer.unit, {verbose, whatIf});
+
+    await rmUnits({
+      service: timer.activates,
+      timer: timer.unit,
+      verbose,
+      whatIf,
+    });
+  } catch (error) {
+    program.error(error);
+  }
+  if (!whatIf && !quiet) console.info(`Timer: ${chalk.cyan(name)} removed.`);
 }
