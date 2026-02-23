@@ -108,7 +108,7 @@ describe('writeUnits', async () => {
   });
 });
 
-describe('rmUnits', async () => {
+describe('removeUnits', async () => {
   let mocks;
   let opts;
   beforeEach(() => {
@@ -133,22 +133,22 @@ describe('rmUnits', async () => {
   });
 
   it('should work if things go ok', async () => {
-    const {rmUnits} = await esmock('#lib/file.js', {}, mocks);
-    return rmUnits(opts).should.be.fulfilled;
+    const {removeUnits} = await esmock('#lib/file.js', {}, mocks);
+    return removeUnits(opts).should.be.fulfilled;
   });
 
   it('should error if rm fails', async () => {
     mocks['node:fs/promises'].rm = async () => {
       throw new Error('rm');
     };
-    const {rmUnits} = await esmock('#lib/file.js', {}, mocks);
-    return rmUnits(opts).should.be.rejectedWith('rm');
+    const {removeUnits} = await esmock('#lib/file.js', {}, mocks);
+    return removeUnits(opts).should.be.rejectedWith('rm');
   });
 
   it('should produce debug output if --verbose specified', async () => {
     opts.verbose = true;
-    const {rmUnits} = await esmock('#lib/file.js', {}, mocks);
-    await rmUnits(opts);
+    const {removeUnits} = await esmock('#lib/file.js', {}, mocks);
+    await removeUnits(opts);
     return mocks['#lib/style.js'].cout.debug.mock
       .callCount()
       .should.be.above(0);
@@ -156,8 +156,8 @@ describe('rmUnits', async () => {
 
   it("shouldn't call rm if --what-if specified", async () => {
     opts.whatIf = true;
-    const {rmUnits} = await esmock('#lib/file.js', {}, mocks);
-    await rmUnits(opts);
+    const {removeUnits} = await esmock('#lib/file.js', {}, mocks);
+    await removeUnits(opts);
     return mocks['node:fs/promises'].rm.mock.callCount().should.equal(0);
   });
 });
