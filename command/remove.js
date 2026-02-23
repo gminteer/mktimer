@@ -1,6 +1,6 @@
 // commander binds "this" to the command object
 
-import {rmUnits} from '#lib/file.js';
+import {removeUnits} from '#lib/file.js';
 import {cout} from '#lib/style.js';
 import {disableTimer, listTimers} from '#lib/timer.js';
 import chalk from 'chalk';
@@ -22,13 +22,15 @@ async function action(name, _, program) {
   let timer;
   try {
     timer = await listTimers({filter: name});
-    if (timer.length > 1) program.error(`${name} matched multiple timers`);
+    if (timer.length > 1)
+      program.error(`${chalk.cyan(name)} matched multiple timers`);
+    if (timer.length === 0) program.error(`no timer named ${chalk.cyan(name)}`);
     timer = timer[0];
 
     if (whatIf) cout.debug('Would perform the following actions:');
 
-    await disableTimer(timer.unit, {context, verbose, whatIf});
-    await rmUnits({
+    await disableTimer({context, name: timer.unit, verbose, whatIf});
+    await removeUnits({
       context,
       service: timer.activates,
       timer: timer.unit,
