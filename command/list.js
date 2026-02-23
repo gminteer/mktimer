@@ -33,6 +33,8 @@ async function action(filter, _, program) {
   if (timers.length === 0) program.error(`No timers match "${filter}".`);
 
   const displayList = await buildDisplayList(timers, {
+    all,
+    context,
     onlyTransient,
     showTransient,
     verbose,
@@ -88,11 +90,11 @@ async function action(filter, _, program) {
 
 async function buildDisplayList(
   timers,
-  {onlyTransient, showTransient, verbose}
+  {all, context, onlyTransient, showTransient, verbose}
 ) {
   const displayList = [];
   for (const timer of timers) {
-    const info = await getTimerDetails({timer: timer.unit});
+    const info = await getTimerDetails({context, timer: timer.unit});
 
     if (!showTransient && info.timer.transient === 'yes') {
       if (verbose) cout.debug(`Skipping transient timer: ${timer.unit}`);
@@ -102,7 +104,7 @@ async function buildDisplayList(
       if (verbose) cout.debug(`Skipping non-transient timer: ${timer.unit}`);
       continue;
     }
-    if (info.timer.activeState === 'inactive') {
+    if (info.timer.activeState === 'inactive' && !all) {
       if (verbose) cout.debug(`Skipping inactive timer: ${timer.unit}`);
       continue;
     }
@@ -119,9 +121,10 @@ async function buildDisplayList(
       execStart = '<unknown>';
     }
     const timerName = timer.unit.split('.')[0];
-    const serviceName = timer.activates.split('.')[0];
+    const serviceName = timer?.activates?.split('.')[0];
     const units =
-      (timerName !== serviceName &&
+      (serviceName &&
+        timerName !== serviceName &&
         `${timerName} ${chalk.yellowBright(`→ ${serviceName}`)}`) ||
       timerName;
 
