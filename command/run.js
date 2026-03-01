@@ -1,9 +1,8 @@
 // commander binds "this" to the command object
 /* eslint-disable no-invalid-this */
 import {writeUnits} from '#lib/file.js';
-import {cout} from '#lib/style.js';
 import {enableTimer} from '#lib/timer.js';
-import {validateExecStart, validateTimer} from '#lib/util.js';
+import {printLn, validateExecStart, validateTimer} from '#lib/util.js';
 import chalk from 'chalk';
 import {stdout} from 'node:process';
 import wrapAnsi from 'wrap-ansi';
@@ -50,14 +49,17 @@ async function action() {
   const execStart = this.args.join(' ');
   const {context, force, on, quiet, timerType, verbose, whatIf} =
     this.optsWithGlobals();
-  cout.whatIf = whatIf;
 
   // hack the path and args off the execStart line if we don't have a name
   const name =
     this.optsWithGlobals()?.name || execStart.split(' ')[0].split('/').pop();
 
   try {
-    if (whatIf) cout.debug('Would perform the following actions:');
+    if (whatIf)
+      printLn({
+        channel: 'whatIf',
+        content: 'Would perform the following actions:',
+      });
     await writeUnits({
       context,
       execStart,

@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-object-injection */
 import {use as chaiUse, should} from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
@@ -12,18 +13,20 @@ fileNotFound.code = 'ENOENT';
 describe('writeUnits', async () => {
   let mocks;
   let opts;
+  let printCount;
 
   beforeEach(() => {
+    printCount = {};
+
     mocks = {
       '#lib/style.js': {
-        cout: {
-          debug: mock.fn(),
-          info: mock.fn(),
-          warn: mock.fn(),
-        },
-        fileBox: async () => '',
+        formatFile: async () => '',
       },
       '#lib/util.js': {
+        printLn: ({channel}) => {
+          if (printCount[channel]) printCount[channel]++;
+          else printCount[channel] = 1;
+        },
         unitPath: () => '~test/',
       },
       'node:fs/promises': {
@@ -61,7 +64,7 @@ describe('writeUnits', async () => {
     const {writeUnits} = await esmock('#lib/file.js', {}, mocks);
 
     await writeUnits(opts);
-    return mocks['#lib/style.js'].cout.warn.mock.callCount().should.equal(2);
+    return printCount.warn.should.equal(2);
   });
 
   it("shouldn't warn if file exits and both --force and --quiet specified", async () => {
@@ -71,7 +74,7 @@ describe('writeUnits', async () => {
     const {writeUnits} = await esmock('#lib/file.js', {}, mocks);
 
     await writeUnits(opts);
-    return mocks['#lib/style.js'].cout.warn.mock.callCount().should.equal(0);
+    return Object.keys(printCount).should.not.include('warn');
   });
 
   it('should error if write fails', async () => {
@@ -88,15 +91,13 @@ describe('writeUnits', async () => {
     const {writeUnits} = await esmock('#lib/file.js', {}, mocks);
 
     await writeUnits(opts);
-    const callCount = mocks['#lib/style.js'].cout.debug.mock.callCount();
+    const callCount = printCount.debug;
     callCount.should.be.above(0);
 
-    mock.reset();
+    printCount.debug = 0;
     opts.verbose = 2;
     await writeUnits(opts);
-    return mocks['#lib/style.js'].cout.debug.mock
-      .callCount()
-      .should.be.above(callCount);
+    return printCount.debug.should.be.above(callCount);
   });
 
   it("shouldn't call writeFile if --what-if specified", async () => {
@@ -111,13 +112,16 @@ describe('writeUnits', async () => {
 describe('removeUnits', async () => {
   let mocks;
   let opts;
+  let printCount;
+
   beforeEach(() => {
+    printCount = {};
+
     mocks = {
-      '#lib/style.js': {
-        cout: {
-          debug: mock.fn(),
-          info: mock.fn(),
-          warn: mock.fn(),
+      '#lib/util.js': {
+        printLn: ({channel}) => {
+          if (printCount[channel]) printCount[channel]++;
+          else printCount[channel] = 1;
         },
       },
       'node:fs/promises': {
@@ -149,9 +153,7 @@ describe('removeUnits', async () => {
     opts.verbose = true;
     const {removeUnits} = await esmock('#lib/file.js', {}, mocks);
     await removeUnits(opts);
-    return mocks['#lib/style.js'].cout.debug.mock
-      .callCount()
-      .should.be.above(0);
+    return printCount.debug.should.be.above(0);
   });
 
   it("shouldn't call rm if --what-if specified", async () => {

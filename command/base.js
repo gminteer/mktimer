@@ -18,6 +18,7 @@ export default new StyledCommand()
   })
   .option('--color', 'force color output') // implemented by chalk
   .option('--no-color', 'disable color output') // implemented by chalk
+  .option('--no-pager', 'do not pipe output to pager')
   .option('-f, --force', 'overwrite existing files')
   .option(
     '-v, --verbose',

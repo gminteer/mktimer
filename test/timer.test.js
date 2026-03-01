@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-object-injection */
 import {use as chaiUse, should} from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
@@ -9,8 +10,11 @@ should();
 describe('enableTimer', async () => {
   let mocks;
   let opts;
+  let printCount;
 
   beforeEach(() => {
+    printCount = {};
+
     mocks = {
       '#lib/style.js': {
         cout: {
@@ -18,10 +22,14 @@ describe('enableTimer', async () => {
           info: mock.fn(),
           warn: mock.fn(),
         },
-        showCommand: mock.fn(async () => {}),
+        formatCommand: mock.fn(async () => {}),
       },
       '#lib/util.js': {
         getDurationStr: mock.fn((str) => str),
+        printLn: ({channel}) => {
+          if (printCount[channel]) printCount[channel]++;
+          else printCount[channel] = 1;
+        },
       },
       zx: {
         $: mock.fn(async () => {
@@ -47,32 +55,36 @@ describe('enableTimer', async () => {
     const {enableTimer} = await esmock('#lib/timer.js', {}, mocks);
     await enableTimer(opts);
     mocks.zx.$.mock.callCount().should.equal(0);
-    return mocks['#lib/style.js'].showCommand.mock.callCount().should.equal(2);
+    return mocks['#lib/style.js'].formatCommand.mock
+      .callCount()
+      .should.equal(2);
   });
 
   it('should produce debug output if --verbose specified', async () => {
     opts.verbose = true;
     const {enableTimer} = await esmock('#lib/timer.js', {}, mocks);
     await enableTimer(opts);
-    return mocks['#lib/style.js'].cout.debug.mock
-      .callCount()
-      .should.be.above(0);
+    return printCount.debug.should.be.above(0);
   });
 });
 
 describe('disableTimer', async () => {
   let mocks;
   let opts;
+  let printCount;
 
   beforeEach(() => {
+    printCount = {};
+
     mocks = {
       '#lib/style.js': {
-        cout: {
-          debug: mock.fn(),
-          info: mock.fn(),
-          warn: mock.fn(),
+        formatCommand: mock.fn(async () => {}),
+      },
+      '#lib/util.js': {
+        printLn: ({channel}) => {
+          if (printCount[channel]) printCount[channel]++;
+          else printCount[channel] = 1;
         },
-        showCommand: mock.fn(async () => {}),
       },
       zx: {
         $: mock.fn(async () => {}),
@@ -96,15 +108,15 @@ describe('disableTimer', async () => {
     const {disableTimer} = await esmock('#lib/timer.js', {}, mocks);
     await disableTimer(opts);
     mocks.zx.$.mock.callCount().should.equal(0);
-    return mocks['#lib/style.js'].showCommand.mock.callCount().should.equal(1);
+    return mocks['#lib/style.js'].formatCommand.mock
+      .callCount()
+      .should.equal(1);
   });
 
   it('should produce debug output if --verbose specified', async () => {
     opts.verbose = true;
     const {disableTimer} = await esmock('#lib/timer.js', {}, mocks);
     await disableTimer(opts);
-    return mocks['#lib/style.js'].cout.debug.mock
-      .callCount()
-      .should.be.above(0);
+    return printCount.debug.should.be.above(0);
   });
 });

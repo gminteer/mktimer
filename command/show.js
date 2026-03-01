@@ -1,7 +1,6 @@
+import {formatDetails} from '#lib/style.js';
 import {getTimerDetails} from '#lib/timer.js';
-import {codeToANSI} from '@shikijs/cli';
-import {env} from 'node:process';
-import {$} from 'zx';
+import {printLn} from '#lib/util.js';
 
 export default function addShowCommand(program) {
   return program
@@ -12,14 +11,8 @@ export default function addShowCommand(program) {
     .action(action);
 }
 
-const formatDetails = async ({content, theme = 'gruvbox-dark-hard'}) => {
-  let fancyDetails = await codeToANSI(content, 'systemd', theme);
-  fancyDetails = fancyDetails.trim();
-  return fancyDetails;
-};
-
 async function action(timer, _, program) {
-  const {context} = program.optsWithGlobals();
+  const {context, pager} = program.optsWithGlobals();
 
   let details;
   try {
@@ -28,5 +21,5 @@ async function action(timer, _, program) {
     program.error(error.stderr);
   }
   details = await formatDetails({content: details.timer});
-  return console.info(details);
+  return printLn({channel: 'info', content: details, pager});
 }

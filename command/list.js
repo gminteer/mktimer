@@ -1,8 +1,7 @@
 // commander binds "this" to the command object
 
-import {cout} from '#lib/style.js';
 import {getTimerDetails, listTimers} from '#lib/timer.js';
-import {getDurationStr} from '#lib/util.js';
+import {getDurationStr, printLn} from '#lib/util.js';
 import chalk from 'chalk';
 import {Option} from 'commander';
 import TtyTable from 'tty-table';
@@ -97,15 +96,27 @@ async function buildDisplayList(
     const info = await getTimerDetails({context, timer: timer.unit});
 
     if (!showTransient && info.timer.transient === 'yes') {
-      if (verbose) cout.debug(`Skipping transient timer: ${timer.unit}`);
+      if (verbose)
+        printLn({
+          channel: 'debug',
+          content: `Skipping transient timer: ${timer.unit}`,
+        });
       continue;
     }
     if (onlyTransient && info.timer.transient === 'no') {
-      if (verbose) cout.debug(`Skipping non-transient timer: ${timer.unit}`);
+      if (verbose)
+        printLn({
+          channel: 'debug',
+          content: `Skipping non-transient timer: ${timer.unit}`,
+        });
       continue;
     }
     if (info.timer.activeState === 'inactive' && !all) {
-      if (verbose) cout.debug(`Skipping inactive timer: ${timer.unit}`);
+      if (verbose)
+        printLn({
+          channel: 'debug',
+          content: `Skipping inactive timer: ${timer.unit}`,
+        });
       continue;
     }
 
