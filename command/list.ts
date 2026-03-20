@@ -1,12 +1,27 @@
-// commander binds "this" to the command object
-
-import {getTimerDetails, listTimers} from '#lib/timer.js';
-import {getDurationStr, printLn} from '#lib/util.js';
-import chalk from 'chalk';
-import {Option} from 'commander';
+import {Command, Option} from 'commander';
+import {styleText} from 'node:util';
 import TtyTable from 'tty-table';
 
-export default function addListCommand(program) {
+import type {GlobalOpts} from './base.ts';
+
+import {styles} from '../lib/style.ts';
+import {getTimerDetails, listTimers, type TimerList} from '../lib/timer.ts';
+import {getDurationStr} from '../lib/util.ts';
+
+export type ListOpts = GlobalOpts & {
+  all?: boolean;
+  onlyTransient?: boolean;
+  showTransient?: boolean;
+};
+
+type DisplayRow = {
+  execStart: string;
+  last: string;
+  next: string;
+  units: string;
+};
+
+export default function addListCommand(program: Command) {
   return program
     .command('list')
     .alias('ls')
@@ -14,35 +29,40 @@ export default function addListCommand(program) {
     .argument('[filter]', 'only display timers matching [filter]')
     .option('-t, --show-transient', 'show transient timers')
     .addOption(
-      new Option('-a, --all', 'show all timers').implies('showTransient')
+      new Option('-a, --all', 'show all timers').implies({showTransient: true})
     )
     .addOption(
       new Option('-T, --only-transient', 'only show transient timers')
-        .implies('showTransient')
+        .implies({showTransient: true})
         .conflicts('all')
     )
     .action(action);
 }
 
-async function action(filter, _, program) {
-  const {all, context, onlyTransient, showTransient, verbose} =
-    program.optsWithGlobals();
-  const timers = await listTimers({all, context, filter});
+async function action(this: Command) {
+  const filter: string = this.args[0];
+  const {all, onlyTransient, scope, showTransient, verbose}: ListOpts =
+    this.optsWithGlobals();
+  const timers = await listTimers(filter, {all, scope});
 
-  if (timers.length === 0) program.error(`No timers match "${filter}".`);
+  if (timers.length === 0) this.error(`No timers match "${filter}".`);
 
   const displayList = await buildDisplayList(timers, {
     all,
-    context,
     onlyTransient,
+    scope,
     showTransient,
     verbose,
   });
+  const table = buildTable(displayList);
+  console.info(table.render());
+}
 
-  const table = new TtyTable(
+const buildTable = (displayList: DisplayRow[]) =>
+  TtyTable(
     [
       {
-        alias: chalk.bold('Units'),
+        alias: styleText('bold', 'Units'),
         align: 'right',
         color: 'cyan',
         headerAlign: 'right',
@@ -50,31 +70,27 @@ async function action(filter, _, program) {
         value: 'units',
       },
       {
-        alias: chalk.bold('Run'),
+        alias: styleText('bold', 'Run'),
         color: 'blue',
         headerColor: 'blueBright',
         value: 'execStart',
       },
       {
-        alias: chalk.bold('Last'),
+        alias: styleText('bold', 'Last'),
         align: 'left',
         color: 'green',
-        formatter: function (value) {
-          return value === 'never'
-            ? this.style(value, 'redBright')
-            : `+${value}`;
-        },
+        formatter: (value: string) =>
+          value === 'never' ? styleText('redBright', value) : `+${value}`,
         headerAlign: 'left',
         headerColor: 'greenBright',
         value: 'last',
       },
       {
-        alias: chalk.bold('Next'),
+        alias: styleText('bold', 'Next'),
         align: 'left',
         color: 'magenta',
-        formatter: function (value) {
-          return value === 'never' ? this.style(value, 'redBright') : value;
-        },
+        formatter: (value: string) =>
+          value === 'never' ? styleText('redBright', value) : value,
         headerAlign: 'left',
         headerColor: 'magentaBright',
         value: 'next',
@@ -84,59 +100,50 @@ async function action(filter, _, program) {
     {borderColor: 'gray', compact: true}
   );
 
-  console.info(table.render());
-}
+const debugOut = (str: string) => {
+  console.debug(styles.debug(str));
+};
 
 async function buildDisplayList(
-  timers,
-  {all, context, onlyTransient, showTransient, verbose}
+  timers: TimerList,
+  {all, onlyTransient, scope = 'user', showTransient, verbose}: ListOpts
 ) {
   const displayList = [];
   for (const timer of timers) {
-    const info = await getTimerDetails({context, timer: timer.unit});
-
+    const info = await getTimerDetails(timer.unit, scope);
+    if (typeof info.timer === 'string' || typeof info.service === 'string')
+      throw new Error('invalid timer details');
     if (!showTransient && info.timer.transient === 'yes') {
-      if (verbose)
-        printLn({
-          channel: 'debug',
-          content: `Skipping transient timer: ${timer.unit}`,
-        });
+      if (verbose) debugOut(`Skipping transient timer: ${timer.unit}`);
       continue;
     }
     if (onlyTransient && info.timer.transient === 'no') {
-      if (verbose)
-        printLn({
-          channel: 'debug',
-          content: `Skipping non-transient timer: ${timer.unit}`,
-        });
+      if (verbose) debugOut(`Skipping non-transient timer: ${timer.unit}`);
       continue;
     }
     if (info.timer.activeState === 'inactive' && !all) {
-      if (verbose)
-        printLn({
-          channel: 'debug',
-          content: `Skipping inactive timer: ${timer.unit}`,
-        });
+      if (verbose) debugOut(`Skipping inactive timer: ${timer.unit}`);
       continue;
     }
 
     let execStart;
-    if (info?.service?.execStart) {
+    if (info.service.execStart) {
       execStart = info.service.execStart
         .split(';')
         .find((token) => token.includes('argv[]='))
-        .split('=');
+        ?.split('=');
+      if (!execStart) throw new Error('invalid execStart line');
       execStart.shift();
       execStart = execStart.join('=');
     } else {
       execStart = '<unknown>';
     }
     const timerName = timer.unit.split('.')[0];
-    const serviceName = timer?.activates?.split('.')[0];
+    const serviceName = timer.activates.split('.')[0];
     const units =
       (serviceName &&
         timerName !== serviceName &&
-        `${timerName} ${chalk.yellowBright(`→ ${serviceName}`)}`) ||
+        `${timerName} ${styleText('yellowBright', `→ ${serviceName}`)}`) ||
       timerName;
 
     // there are "left" and "passed" fields in the output from systemd, but

@@ -1,9 +1,9 @@
-import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import google from 'eslint-config-google';
 // apparently these two rules are borked in eslint 9+
 delete google.rules['valid-jsdoc'];
 delete google.rules['require-jsdoc'];
+import eslint from '@eslint/js';
 import {importX} from 'eslint-plugin-import-x';
 import node from 'eslint-plugin-n';
 import perfectionist from 'eslint-plugin-perfectionist';
@@ -11,10 +11,12 @@ import prettier from 'eslint-plugin-prettier/recommended';
 import promise from 'eslint-plugin-promise';
 import security from 'eslint-plugin-security';
 import unicorn from 'eslint-plugin-unicorn';
-import {globalIgnores} from 'eslint/config';
+import {defineConfig, globalIgnores} from 'eslint/config';
+import tseslint from 'typescript-eslint';
 
-export default [
-  js.configs.recommended,
+export default defineConfig(
+  eslint.configs.recommended,
+  tseslint.configs.strictTypeChecked,
   promise.configs['flat/recommended'],
   importX.flatConfigs.recommended,
   node.configs['flat/recommended'],
@@ -29,6 +31,9 @@ export default [
   unicorn.configs.recommended,
   {
     languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
@@ -58,5 +63,5 @@ export default [
     },
   },
   globalIgnores(['**/node_modules', '**/dist', '**/coverage']),
-  prettier,
-];
+  prettier
+);
