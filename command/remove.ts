@@ -43,6 +43,6 @@ async function action(this: Command) {
     if (!(error instanceof Error)) throw error;
     this.error(error.message);
   }
-  if (!whatIf && verbose > 0)
+  if (!whatIf && verbose)
     console.info(`Timer: ${styleText('cyan', name)} removed.`);
 }

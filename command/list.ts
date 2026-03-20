@@ -1,24 +1,23 @@
 import {Command, Option} from 'commander';
 import {styleText} from 'node:util';
-import TtyTable from 'tty-table';
 
 import type {GlobalOpts} from './base.ts';
 
-import {styles} from '../lib/style.ts';
+import {formatTimerList, styles} from '../lib/style.ts';
 import {getTimerDetails, listTimers, type TimerList} from '../lib/timer.ts';
 import {getDurationStr} from '../lib/util.ts';
+
+export type DisplayRow = {
+  execStart: string;
+  last: string;
+  next: string;
+  units: string;
+};
 
 export type ListOpts = GlobalOpts & {
   all?: boolean;
   onlyTransient?: boolean;
   showTransient?: boolean;
-};
-
-type DisplayRow = {
-  execStart: string;
-  last: string;
-  next: string;
-  units: string;
 };
 
 export default function addListCommand(program: Command) {
@@ -54,51 +53,9 @@ async function action(this: Command) {
     showTransient,
     verbose,
   });
-  const table = buildTable(displayList);
-  console.info(table.render());
-}
 
-const buildTable = (displayList: DisplayRow[]) =>
-  TtyTable(
-    [
-      {
-        alias: styleText('bold', 'Units'),
-        align: 'right',
-        color: 'cyan',
-        headerAlign: 'right',
-        headerColor: 'cyanBright',
-        value: 'units',
-      },
-      {
-        alias: styleText('bold', 'Run'),
-        color: 'blue',
-        headerColor: 'blueBright',
-        value: 'execStart',
-      },
-      {
-        alias: styleText('bold', 'Last'),
-        align: 'left',
-        color: 'green',
-        formatter: (value: string) =>
-          value === 'never' ? styleText('redBright', value) : `+${value}`,
-        headerAlign: 'left',
-        headerColor: 'greenBright',
-        value: 'last',
-      },
-      {
-        alias: styleText('bold', 'Next'),
-        align: 'left',
-        color: 'magenta',
-        formatter: (value: string) =>
-          value === 'never' ? styleText('redBright', value) : value,
-        headerAlign: 'left',
-        headerColor: 'magentaBright',
-        value: 'next',
-      },
-    ],
-    displayList,
-    {borderColor: 'gray', compact: true}
-  );
+  console.info(formatTimerList(displayList));
+}
 
 const debugOut = (str: string) => {
   console.debug(styles.debug(str));

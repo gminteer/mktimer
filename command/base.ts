@@ -33,10 +33,10 @@ export default styleCommand(new Command())
   .addOption(
     new Option('-u, --user', 'user scope')
       .implies({scope: 'user'})
-      .conflicts(['system'])
+      .conflicts('system')
   )
   .addOption(
     new Option('-s, --system', 'system scope')
       .implies({scope: 'system'})
-      .conflicts(['user'])
+      .conflicts('user')
   );

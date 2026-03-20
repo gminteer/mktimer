@@ -30,10 +30,8 @@ async function action(this: Command) {
   }
   if (typeof details.timer !== 'string')
     throw new Error('invalid timer details');
+
   details = await formatDetails(details.timer);
-  if (pager) {
-    spawnPager(details);
-    return;
-  }
-  console.info(details);
+  if (pager) spawnPager(details);
+  else console.info(details);
 }

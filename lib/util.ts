@@ -106,6 +106,6 @@ export async function validateTimer(value: string) {
   if (parsed === undefined)
     throw new Error("couldn't parse systemd-analyze output");
   parsed = /:(.+)/.exec(parsed)?.pop()?.trim();
-
+  if (!parsed) throw new Error('failed to normalize timer');
   return {on: parsed, timerType};
 }
