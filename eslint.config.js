@@ -31,10 +31,10 @@ export default defineConfig(
   unicorn.configs.recommended,
   {
     languageOptions: {
+      ecmaVersion: 'latest',
       parserOptions: {
         projectService: true,
       },
-      ecmaVersion: 'latest',
       sourceType: 'module',
     },
     plugins: {
@@ -45,6 +45,7 @@ export default defineConfig(
     },
     rules: {
       eqeqeq: ['error', 'smart'],
+      'n/hashbang': 'off',
       'new-cap': ['off'],
       'no-debugger': ['warn'],
       'no-template-curly-in-string': ['warn'],
@@ -53,7 +54,6 @@ export default defineConfig(
       'unicorn/better-regex': 'warn',
       'unicorn/prevent-abbreviations': 'off',
       'vars-on-top': ['warn'],
-      'n/hashbang': 'off',
     },
   },
   {
@@ -62,6 +62,10 @@ export default defineConfig(
       'n/no-unpublished-import': 'off',
       'unicorn/catch-error-name': 'off',
     },
+  },
+  {
+    extends: [tseslint.configs.disableTypeChecked],
+    files: ['**/*.js'],
   },
   globalIgnores(['**/node_modules', '**/dist', '**/coverage']),
   prettier
