@@ -53,6 +53,7 @@ export default defineConfig(
       'unicorn/better-regex': 'warn',
       'unicorn/prevent-abbreviations': 'off',
       'vars-on-top': ['warn'],
+      'n/hashbang': 'off',
     },
   },
   {
