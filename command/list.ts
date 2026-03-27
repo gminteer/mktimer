@@ -7,13 +7,6 @@ import {formatTimerList, styles} from '../lib/style.ts';
 import {getTimerDetails, listTimers, type TimerList} from '../lib/timer.ts';
 import {getDurationStr} from '../lib/util.ts';
 
-export type DisplayRow = {
-  execStart: string;
-  last: string;
-  next: string;
-  units: string;
-};
-
 export type ListOpts = GlobalOpts & {
   all?: boolean;
   onlyTransient?: boolean;

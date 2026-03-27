@@ -5,7 +5,12 @@ import boxen from 'boxen';
 import {styleText} from 'node:util';
 import TtyTable from 'tty-table';
 
-import type {DisplayRow} from '../command/list.ts';
+type DisplayRow = {
+  execStart: string;
+  last: string;
+  next: string;
+  units: string;
+};
 
 export const styles = {
   debug: (str: string) => styleText('greenBright', str),

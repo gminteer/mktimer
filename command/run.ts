@@ -62,8 +62,15 @@ See ${styleText(['whiteBright', 'bold'], 'man systemd.time')} for detailed descr
 }
 async function action(this: Command) {
   const execStart = this.args.join(' ');
-  const {force, name, on, scope, timerType, verbose, whatIf}: RunOpts =
-    this.optsWithGlobals();
+  const {
+    force,
+    name,
+    on,
+    scope = 'user',
+    timerType,
+    verbose = 0,
+    whatIf,
+  }: RunOpts = this.optsWithGlobals();
 
   try {
     if (whatIf)
@@ -85,6 +92,7 @@ async function action(this: Command) {
   }
 }
 
+// a better name might be validateAndNormalize
 async function validate(program: Command) {
   try {
     // it's a little barbaric to just stomp on input parameters,
