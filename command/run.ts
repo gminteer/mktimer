@@ -18,7 +18,7 @@ export type RunOpts = GlobalOpts & {
   timerType: 'calendar' | 'timeSpan';
 };
 
-type rawRunOpts = {
+type RawRunOpts = {
   name?: string;
   on: string[];
 };
@@ -98,7 +98,7 @@ async function validate(program: Command) {
     // it's a little barbaric to just stomp on input parameters,
     // but we don't need the original values anymore
     program.args[0] = await validateExecStart(program.args[0]);
-    const rawOpts: rawRunOpts = program.opts();
+    const rawOpts: RawRunOpts = program.opts();
     Object.assign(program.opts(), await validateTimer(rawOpts.on.join(' ')));
     if (!rawOpts.name)
       // hack the path and args off the execStart line if we don't have a name

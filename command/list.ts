@@ -4,7 +4,7 @@ import {styleText} from 'node:util';
 import type {GlobalOpts} from './base.ts';
 
 import {formatTimerList, styles} from '../lib/style.ts';
-import {getTimerDetails, listTimers, type TimerList} from '../lib/timer.ts';
+import {getTimerDetails, listTimers, type Timer} from '../lib/timer.ts';
 import {getDurationStr} from '../lib/util.ts';
 
 export type ListOpts = GlobalOpts & {
@@ -55,7 +55,7 @@ const debugOut = (str: string) => {
 };
 
 async function buildDisplayList(
-  timers: TimerList,
+  timers: Timer[],
   {all, onlyTransient, scope = 'user', showTransient, verbose}: ListOpts
 ) {
   const displayList = [];

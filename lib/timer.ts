@@ -1,5 +1,4 @@
 import {styleText} from 'node:util';
-import {z} from 'zod';
 import {$} from 'zx';
 
 import type {GlobalOpts} from '../command/base.ts';
@@ -10,17 +9,14 @@ import {getDurationStr} from '../lib/util.ts';
 
 $.quiet = true;
 
-const timerListItem = z.object({
-  activates: z.string(),
-  last: z.number(),
-  left: z.number().nullable(),
-  next: z.number().nullable(),
-  passed: z.number(),
-  unit: z.string(),
-});
-
-const timerList = z.array(timerListItem);
-export type TimerList = z.infer<typeof timerList>;
+export type Timer = {
+  activates: string;
+  last: number;
+  left: null | number;
+  next: null | number;
+  passed: number;
+  unit: string;
+};
 
 export async function disableTimer(
   name: string,
@@ -106,7 +102,7 @@ export async function listTimers(
   if (filter) command.push(filter);
 
   const {stdout} = await $`${command}`;
-  const timers = timerList.parse(JSON.parse(stdout));
+  const timers = JSON.parse(stdout) as Timer[];
   return timers;
 }
 

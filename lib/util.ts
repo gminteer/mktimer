@@ -9,10 +9,9 @@ $.quiet = true;
 
 export function getDurationStr(
   timeStamp: number,
-  {unit = 'microseconds'} = {}
+  {unit = 'microseconds'}: {unit?: string} = {}
 ) {
   // setting this up in case we need to handle timeStamps that aren't in µs
-  // in the future
   if (unit !== 'microseconds') throw new Error(`Unsupported unit: ${unit}`);
   let duration = Temporal.Now.instant()
     .since(Temporal.Instant.fromEpochMilliseconds(Math.floor(timeStamp / 1000)))
@@ -60,11 +59,9 @@ export function spawnPager(content: string) {
     throw error;
   });
 }
-
+if (!env.HOME) throw new Error('no HOME environment variable?!');
 export const scopePath = {
   system: '/etc/systemd/system/',
-  // if env.HOME is undefined we're in trouble anyways
-  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   user: `${env.HOME}/.config/systemd/user`,
 };
 

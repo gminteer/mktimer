@@ -43,47 +43,44 @@ export const formatFile = async (content: string, name: string) => {
   });
 };
 
+const headers = [
+  {
+    alias: styleText('bold', 'Units'),
+    align: 'right',
+    color: 'cyan',
+    headerAlign: 'right',
+    headerColor: 'cyanBright',
+    value: 'units',
+  },
+  {
+    alias: styleText('bold', 'Run'),
+    color: 'blue',
+    headerColor: 'blueBright',
+    value: 'execStart',
+  },
+  {
+    alias: styleText('bold', 'Last'),
+    align: 'left',
+    color: 'green',
+    formatter: (value: string) =>
+      value === 'never' ? styleText('redBright', value) : `+${value}`,
+    headerAlign: 'left',
+    headerColor: 'greenBright',
+    value: 'last',
+  },
+  {
+    alias: styleText('bold', 'Next'),
+    align: 'left',
+    color: 'magenta',
+    formatter: (value: string) =>
+      value === 'never' ? styleText('redBright', value) : value,
+    headerAlign: 'left',
+    headerColor: 'magentaBright',
+    value: 'next',
+  },
+];
 export const formatTimerList = (displayList: DisplayRow[]) =>
-  TtyTable(
-    [
-      {
-        alias: styleText('bold', 'Units'),
-        align: 'right',
-        color: 'cyan',
-        headerAlign: 'right',
-        headerColor: 'cyanBright',
-        value: 'units',
-      },
-      {
-        alias: styleText('bold', 'Run'),
-        color: 'blue',
-        headerColor: 'blueBright',
-        value: 'execStart',
-      },
-      {
-        alias: styleText('bold', 'Last'),
-        align: 'left',
-        color: 'green',
-        formatter: (value: string) =>
-          value === 'never' ? styleText('redBright', value) : `+${value}`,
-        headerAlign: 'left',
-        headerColor: 'greenBright',
-        value: 'last',
-      },
-      {
-        alias: styleText('bold', 'Next'),
-        align: 'left',
-        color: 'magenta',
-        formatter: (value: string) =>
-          value === 'never' ? styleText('redBright', value) : value,
-        headerAlign: 'left',
-        headerColor: 'magentaBright',
-        value: 'next',
-      },
-    ],
-    displayList,
-    {borderColor: 'gray', compact: true}
-  ).render();
+  TtyTable(headers, displayList, {borderColor: 'gray', compact: true}).render();
 
 export const styleCommand = (command: Command) =>
   command
