@@ -1,16 +1,13 @@
 #!/usr/bin/env node
 import program from './command/base.ts';
-import addListCommand from './command/list.ts';
-import addRemoveCommand from './command/remove.ts';
-import addRunCommand from './command/run.ts';
-import addShowCommand from './command/show.ts';
+import addList from './command/list.ts';
+import addRemove from './command/remove.ts';
+import addRun from './command/run.ts';
+import addShow from './command/show.ts';
 import pkg from './package.json' with {type: 'json'};
 
 program.name(pkg.name).description(pkg.description).version(pkg.version);
 
-addListCommand(program);
-addRemoveCommand(program);
-addRunCommand(program);
-addShowCommand(program);
-
+const verbs = [addList, addRemove, addRun, addShow];
+for (const addVerb of verbs) addVerb(program);
 await program.parseAsync();

@@ -8,7 +8,7 @@ import {formatDetails} from '../lib/style.ts';
 import {getTimerDetails} from '../lib/timer.ts';
 import {spawnPager} from '../lib/util.ts';
 
-export default function addShowCommand(program: Command) {
+export default function addShow(program: Command) {
   return program
     .command('show')
     .alias('info')

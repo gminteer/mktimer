@@ -8,7 +8,7 @@ import {removeUnits} from '../lib/file.ts';
 import {styles} from '../lib/style.ts';
 import {disableTimer, listTimers} from '../lib/timer.ts';
 
-export default function addRemoveCommand(program: Command) {
+export default function addRemove(program: Command) {
   return program
     .command('remove')
     .alias('rm')

@@ -13,7 +13,7 @@ export type ListOpts = GlobalOpts & {
   showTransient?: boolean;
 };
 
-export default function addListCommand(program: Command) {
+export default function addList(program: Command) {
   return program
     .command('list')
     .alias('ls')

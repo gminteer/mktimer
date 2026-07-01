@@ -1,8 +1,9 @@
 import stylistic from '@stylistic/eslint-plugin';
 import google from 'eslint-config-google';
 // apparently these two rules are borked in eslint 9+
-delete google.rules['valid-jsdoc'];
-delete google.rules['require-jsdoc'];
+for (const borkedRule of ['valid-jsdoc', 'require-jsdoc'])
+  // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-dynamic-delete
+  delete google.rules[borkedRule];
 import eslint from '@eslint/js';
 import {importX} from 'eslint-plugin-import-x';
 import node from 'eslint-plugin-n';

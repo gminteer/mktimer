@@ -23,7 +23,7 @@ type RawRunOpts = {
   on: string[];
 };
 
-export default function addRunCommand(program: Command) {
+export default function addRun(program: Command) {
   return program
     .command('run')
     .alias('new')
