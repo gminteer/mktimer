@@ -88,6 +88,7 @@ export async function getTimerDetails(
           .pop()
       : timer.unit;
 
+  if (!serviceName) throw new Error("Couldn't figure out service name!");
   output = await $`systemctl --${scope} show ${serviceName}`;
   const service = json ? showToJSON(output.stdout) : output.stdout;
   return {service, timer};
